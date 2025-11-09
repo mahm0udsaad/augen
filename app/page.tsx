@@ -5,6 +5,7 @@ import ProductCard from "@/components/product-card"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import HeroCarousel from "@/components/hero-carousel"
+import CategoriesSection from "@/components/categories-section"
 import { supabase } from "@/lib/supabase"
 import type { Metadata } from "next"
 
@@ -44,6 +45,19 @@ export default async function Home() {
     .order("sort_order", { ascending: true })
     .order("created_at", { ascending: false })
 
+  // Fetch category displays
+  const { data: categoryDisplays } = await supabase
+    .from("category_displays")
+    .select("*")
+    .eq("is_visible", true)
+    .order("sort_order", { ascending: true })
+
+  // Fetch subcategory displays for cards
+  const { data: subcategoryDisplays } = await supabase
+    .from("subcategory_displays")
+    .select("*")
+    .order("sort_order", { ascending: true })
+
   return (
     <main className="min-h-screen bg-background">
       <Header />
@@ -51,166 +65,13 @@ export default async function Home() {
       {/* Hero Carousel */}
       <HeroCarousel slides={slides || []} />
 
-      {/* Hardcoded Category Sections */}
-      <section className="px-4 py-8 sm:py-12 md:py-16 bg-[#f5e6d3]">
+      {/* Dynamic Category Sections */}
+      <section className="px-4 py-12 sm:py-16 md:py-24 bg-gray-50">
         <div className="max-w-7xl mx-auto">
-          {/* Sunglasses Section */}
-          <div className="mb-12 md:mb-16">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {/* Main Card */}
-              <div className="md:col-span-1 lg:col-span-1 bg-white p-6 md:p-8 rounded-lg shadow-sm flex flex-col justify-center">
-                <Image 
-                  src="/images/icon.png" 
-                  alt="Augen" 
-                  width={60} 
-                  height={60}
-                  className="mb-4"
-                />
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">نظارات شمسية</h2>
-                <p className="text-lg md:text-xl mb-6">أفضل التصاميم وأفضل جودة</p>
-                <Link 
-                  href="/categories?parent=sunglasses"
-                  className="bg-black text-white px-6 py-3 rounded-md hover:bg-black/90 transition-colors inline-block text-center w-fit"
-                >
-                  تسوق الآن
-                </Link>
-              </div>
-
-              {/* Men's Sunglasses */}
-              <Link 
-                href="/categories?parent=sunglasses&sub=man"
-                className="group relative bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-[4/3] relative">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg">
-                    <Image 
-                      src="/images/icon.png" 
-                      alt="Augen" 
-                      width={40} 
-                      height={40}
-                    />
-                  </div>
-                  <div className="absolute bottom-4 right-4 text-right">
-                    <h3 className="text-xl md:text-2xl font-bold mb-1">نظارات شمسية رجالي</h3>
-                    <p className="text-sm md:text-base">ارتدِ النظارات التي تعزز شخصيتك</p>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Women's Sunglasses */}
-              <Link 
-                href="/categories?parent=sunglasses&sub=woman"
-                className="group relative bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-[4/3] relative">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg">
-                    <Image 
-                      src="/images/icon.png" 
-                      alt="Augen" 
-                      width={40} 
-                      height={40}
-                    />
-                  </div>
-                  <div className="absolute bottom-4 right-4 text-right">
-                    <h3 className="text-xl md:text-2xl font-bold mb-1">نظارات شمسية نسائي</h3>
-                    <p className="text-sm md:text-base">لأن عينيك تحتاجهن</p>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
-
-          {/* Optical Glasses Section */}
-          <div>
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
-              {/* Main Card */}
-              <div className="md:col-span-1 lg:col-span-1 bg-white p-6 md:p-8 rounded-lg shadow-sm flex flex-col justify-center">
-                <Image 
-                  src="/images/icon.png" 
-                  alt="Augen" 
-                  width={60} 
-                  height={60}
-                  className="mb-4"
-                />
-                <h2 className="text-2xl md:text-3xl lg:text-4xl font-bold mb-2">نظارات طبية</h2>
-                <p className="text-lg md:text-xl mb-6">أفضل التصاميم وأفضل جودة</p>
-                <Link 
-                  href="/categories?parent=optical_glasses"
-                  className="bg-black text-white px-6 py-3 rounded-md hover:bg-black/90 transition-colors inline-block text-center w-fit"
-                >
-                  تسوق الآن
-                </Link>
-              </div>
-
-              {/* Men's Optical */}
-              <Link 
-                href="/categories?parent=optical_glasses&sub=man"
-                className="group relative bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-[4/3] relative">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg">
-                    <Image 
-                      src="/images/icon.png" 
-                      alt="Augen" 
-                      width={40} 
-                      height={40}
-                    />
-                  </div>
-                  <div className="absolute bottom-4 right-4 text-right">
-                    <h3 className="text-xl md:text-2xl font-bold mb-1">نظارات طبية رجالي</h3>
-                    <p className="text-sm md:text-base">ارتدِ النظارات التي تعزز شخصيتك</p>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Women's Optical */}
-              <Link 
-                href="/categories?parent=optical_glasses&sub=woman"
-                className="group relative bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow"
-              >
-                <div className="aspect-[4/3] relative">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg">
-                    <Image 
-                      src="/images/icon.png" 
-                      alt="Augen" 
-                      width={40} 
-                      height={40}
-                    />
-                  </div>
-                  <div className="absolute bottom-4 right-4 text-right">
-                    <h3 className="text-xl md:text-2xl font-bold mb-1">نظارات طبية نسائي</h3>
-                    <p className="text-sm md:text-base">لأن عينيك تحتاجهن</p>
-                  </div>
-                </div>
-              </Link>
-
-              {/* Child's Optical */}
-              <Link 
-                href="/categories?parent=optical_glasses&sub=child"
-                className="group relative bg-white rounded-lg shadow-sm overflow-hidden hover:shadow-md transition-shadow md:col-span-2 lg:col-span-1"
-              >
-                <div className="aspect-[4/3] relative">
-                  <div className="absolute inset-0 bg-gradient-to-b from-transparent to-black/20" />
-                  <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-4 rounded-lg">
-                    <Image 
-                      src="/images/icon.png" 
-                      alt="Augen" 
-                      width={40} 
-                      height={40}
-                    />
-                  </div>
-                  <div className="absolute bottom-4 right-4 text-right">
-                    <h3 className="text-xl md:text-2xl font-bold mb-1">نظارات طبية للأطفال</h3>
-                    <p className="text-sm md:text-base">في بعض الأحيان، كل ما تحتاجه هو منظور جديد</p>
-                  </div>
-                </div>
-              </Link>
-            </div>
-          </div>
+          <CategoriesSection
+            initialDisplays={categoryDisplays || []}
+            subcategoryDisplays={subcategoryDisplays || []}
+          />
         </div>
       </section>
 

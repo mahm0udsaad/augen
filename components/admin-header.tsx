@@ -14,8 +14,8 @@ export default function AdminHeader() {
     { href: "/admin", label: "لوحة التحكم", icon: LayoutDashboard },
     { href: "/admin/orders", label: "الطلبات", icon: ShoppingBag },
     { href: "/admin/products", label: "المنتجات", icon: Package },
-    { href: "/admin/categories", label: "التصنيفات", icon: Tags },
-    { href: "/admin/subcategories", label: "التصنيفات الفرعية", icon: Layers },
+    { href: "/admin/slider", label: "إدارة الشرائح", icon: Layers },
+    { href: "/admin/category-displays", label: "عرض التصنيفات", icon: Tags },
   ]
 
   return (

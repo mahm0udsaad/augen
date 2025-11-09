@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react"
 import Image from "next/image"
+import Link from "next/link"
 import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -11,6 +12,10 @@ interface CarouselSlide {
   mobile_image_url: string | null
   sort_order: number
   is_active: boolean
+  headline?: string | null
+  slogan?: string | null
+  cta_label?: string | null
+  cta_link?: string | null
 }
 
 interface HeroCarouselProps {
@@ -63,35 +68,59 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
     <section className="relative h-screen md:h-[500px] lg:h-screen overflow-hidden group">
       {/* Slides */}
       <div className="relative w-full h-full">
-        {slides.map((slide, index) => (
-          <div
-            key={slide.id}
-            className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
-              index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
-            }`}
-          >
-            {/* Desktop Image */}
-            <Image
-              src={slide.image_url}
-              alt={`Slide ${index + 1}`}
-              fill
-              className="object-cover hidden md:block"
-              priority={index === 0}
-              sizes="100vw"
-            />
-            {/* Mobile Image */}
-            <Image
-              src={slide.mobile_image_url || slide.image_url}
-              alt={`Slide ${index + 1}`}
-              fill
-              className="object-cover block md:hidden"
-              priority={index === 0}
-              sizes="100vw"
-            />
-            {/* Gradient Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30" />
-          </div>
-        ))}
+        {slides.map((slide, index) => {
+          const headline = slide.headline || "AUGEN"
+          const slogan = slide.slogan || "اكتشف أحدث تشكيلة من الإطارات الفاخرة"
+          const ctaLabel = slide.cta_label || "Shop Now"
+          const ctaLink = slide.cta_link || "/categories"
+
+          return (
+            <div
+              key={slide.id}
+              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${
+                index === currentIndex ? "opacity-100 z-10" : "opacity-0 z-0"
+              }`}
+            >
+              {/* Desktop Image */}
+              <Image
+                src={slide.image_url}
+                alt={`Slide ${index + 1}`}
+                fill
+                className="object-cover hidden md:block"
+                priority={index === 0}
+                sizes="100vw"
+              />
+              {/* Mobile Image */}
+              <Image
+                src={slide.mobile_image_url || slide.image_url}
+                alt={`Slide ${index + 1}`}
+                fill
+                className="object-cover block md:hidden"
+                priority={index === 0}
+                sizes="100vw"
+              />
+              {/* Gradient Overlay */}
+              <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30" />
+
+              {/* Content Overlay */}
+              <div className="absolute inset-0 flex items-center">
+                <div className="px-6 md:px-16 lg:px-24 max-w-4xl space-y-4 text-white">
+                  <p className="text-sm md:text-base uppercase tracking-[0.4em] text-gray-200">
+                    {headline}
+                  </p>
+                  <p className="text-3xl md:text-5xl font-bold leading-tight drop-shadow-lg">
+                    {slogan}
+                  </p>
+                  <div className="pt-4">
+                    <Button asChild size="lg" className="bg-white text-black hover:bg-white/90">
+                      <Link href={ctaLink}>{ctaLabel}</Link>
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )
+        })}
       </div>
 
       {/* Navigation Arrows */}
@@ -145,4 +174,3 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
     </section>
   )
 }
-

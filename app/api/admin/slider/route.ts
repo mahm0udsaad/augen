@@ -21,7 +21,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { image_url, mobile_image_url, sort_order, is_active } = body
+    const { image_url, mobile_image_url, sort_order, is_active, headline, slogan, cta_label, cta_link } = body
 
     if (!image_url) {
       return NextResponse.json({ error: "مطلوب رفع صورة" }, { status: 400 })
@@ -32,6 +32,10 @@ export async function POST(request: Request) {
       .insert({
         image_url,
         mobile_image_url: mobile_image_url || null,
+        headline: headline || null,
+        slogan: slogan || null,
+        cta_label: cta_label || "Shop Now",
+        cta_link: cta_link || "/categories",
         sort_order: sort_order || 0,
         is_active: is_active !== undefined ? is_active : true,
       })
@@ -46,4 +50,3 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "فشل في إنشاء الشريحة" }, { status: 500 })
   }
 }
-

@@ -6,8 +6,9 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { UploadField } from "@/components/admin/upload-field"
 import { uploadProductImage, uploadProductVideo, addProductImages } from "@/lib/product-service"
-import { Upload, Loader2, X, Video, Image as ImageIcon, Plus } from "lucide-react"
+import { X, Video, Image as ImageIcon, Plus } from "lucide-react"
 import { PARENT_CATEGORIES, SUBCATEGORIES } from "@/lib/constants"
 import type { ParentCategory, Subcategory } from "@/lib/constants"
 
@@ -50,13 +51,10 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
   const [uploading, setUploading] = useState(false)
   const [uploadingVideo, setUploadingVideo] = useState(false)
 
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>, index?: number) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
-
+  const handleImageUpload = async (file: File, index?: number) => {
+    if (!file) return
     setUploading(true)
     try {
-      const file = files[0]
       const url = await uploadProductImage(file)
 
       if (index !== undefined) {
@@ -89,13 +87,10 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
     }
   }
 
-  const handleVideoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files
-    if (!files || files.length === 0) return
-
+  const handleVideoUpload = async (file: File | null) => {
+    if (!file) return
     setUploadingVideo(true)
     try {
-      const file = files[0]
       const url = await uploadProductVideo(file)
       setFormData({ ...formData, video_url: url })
     } catch (error) {
@@ -242,63 +237,38 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
         </div>
 
         {/* Video Upload */}
-        <div className="space-y-2 md:col-span-2">
-          <Label htmlFor="video">فيديو المنتج (اختياري)</Label>
-          <div className="flex items-center gap-2">
-            <Input
-              id="video"
-              type="file"
-              accept="video/*"
-              onChange={handleVideoUpload}
-              disabled={uploadingVideo}
-              className="hidden"
-            />
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => document.getElementById("video")?.click()}
-              disabled={uploadingVideo}
-            >
-              {uploadingVideo ? (
-                <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-              ) : (
-                <Video className="w-4 h-4 ml-2" />
-              )}
-              {formData.video_url ? "تغيير الفيديو" : "رفع فيديو"}
-            </Button>
-            {formData.video_url && (
-              <span className="text-sm text-green-600">✓ تم رفع الفيديو</span>
-            )}
-          </div>
-        </div>
+        <UploadField
+          className="md:col-span-2"
+          label="فيديو المنتج (اختياري)"
+          accept="video/*"
+          uploading={uploadingVideo}
+          buttonText={formData.video_url ? "تغيير الفيديو" : "رفع فيديو"}
+          placeholder="MP4 أو MOV حتى 60 ثانية"
+          icon={<Video className="w-4 h-4" />}
+          status={
+            formData.video_url && <span className="text-sm text-green-600">✓ تم رفع الفيديو</span>
+          }
+          onFileSelect={(file) => handleVideoUpload(file)}
+          helperText="اختياري - يساعد على إبراز تفاصيل المنتج"
+        />
       </div>
 
       {/* Images with Colors */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <Label>صور المنتج مع الألوان *</Label>
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            onClick={() => document.getElementById("new-image")?.click()}
-            disabled={uploading}
-          >
-            {uploading ? (
-              <Loader2 className="w-4 h-4 ml-2 animate-spin" />
-            ) : (
-              <Plus className="w-4 h-4 ml-2" />
-            )}
-            إضافة صورة
-          </Button>
-          <input
-            id="new-image"
-            type="file"
-            accept="image/*"
-            onChange={(e) => handleImageUpload(e)}
-            className="hidden"
-          />
-        </div>
+        <UploadField
+          label="صور المنتج مع الألوان *"
+          accept="image/*"
+          icon={<Plus className="w-4 h-4" />}
+          buttonText="إضافة صورة"
+          placeholder="PNG أو JPG بدقة عالية"
+          uploading={uploading}
+          helperText={
+            images.length > 0
+              ? `تمت إضافة ${images.length} ${images.length === 1 ? "صورة" : "صور"}`
+              : "يمكنك إضافة أكثر من صورة لكل لون"
+          }
+          onFileSelect={(file) => file && handleImageUpload(file)}
+        />
 
         <div className="grid grid-cols-1 gap-4">
           {images.map((image, index) => (
@@ -391,4 +361,3 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
     </form>
   )
 }
-

@@ -16,31 +16,26 @@ export async function GET() {
     const minPrice = prices.length > 0 ? Math.min(...prices) : 0
     const maxPrice = prices.length > 0 ? Math.max(...prices) : 0
 
-    // Get category breakdown
+    // Get parent category breakdown
     const { data: categoryData, error: categoryError } = await supabaseAdmin
       .from("products")
-      .select("category")
+      .select("parent_category, subcategory")
 
     if (categoryError) throw categoryError
 
     const categoryBreakdown = categoryData?.reduce((acc: any[], curr) => {
-      const existing = acc.find((item) => item.category === curr.category)
+      const key = `${curr.parent_category}_${curr.subcategory}`
+      const existing = acc.find((item) => item.category === key)
       if (existing) {
         existing.count++
       } else {
-        acc.push({ category: curr.category, count: 1 })
+        acc.push({ category: key, count: 1 })
       }
       return acc
     }, []) || []
 
-    // Get total categories count
-    const { data: categories, error: categoriesError } = await supabaseAdmin
-      .from("categories")
-      .select("id")
-
-    if (categoriesError) throw categoriesError
-
-    const totalCategories = categories?.length || 0
+    // Total categories is hardcoded (2 parents: sunglasses, optical_glasses)
+    const totalCategories = 2
 
     return NextResponse.json({
       totalProducts,

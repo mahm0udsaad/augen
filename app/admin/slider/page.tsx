@@ -8,6 +8,8 @@ import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { Textarea } from "@/components/ui/textarea"
+import { UploadField } from "@/components/admin/upload-field"
 import { Plus, Loader2, Edit, Trash2, GripVertical, Upload } from "lucide-react"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
@@ -19,6 +21,10 @@ interface CarouselSlide {
   sort_order: number
   is_active: boolean
   created_at: string
+  headline?: string | null
+  slogan?: string | null
+  cta_label?: string | null
+  cta_link?: string | null
 }
 
 export default function SliderManagementPage() {
@@ -30,12 +36,18 @@ export default function SliderManagementPage() {
   const [editingSlide, setEditingSlide] = useState<CarouselSlide | null>(null)
   const [uploading, setUploading] = useState(false)
 
-  const [formData, setFormData] = useState({
+  const emptyForm = {
     image_url: "",
     mobile_image_url: "",
+    headline: "AUGEN",
+    slogan: "",
+    cta_label: "Shop Now",
+    cta_link: "/categories",
     sort_order: 0,
     is_active: true,
-  })
+  }
+
+  const [formData, setFormData] = useState(emptyForm)
 
   useEffect(() => {
     if (isAuthed) {
@@ -109,7 +121,7 @@ export default function SliderManagementPage() {
       toast.success(editingSlide ? "تم تحديث الشريحة" : "تم إضافة الشريحة")
       setShowForm(false)
       setEditingSlide(null)
-      setFormData({ image_url: "", mobile_image_url: "", sort_order: 0, is_active: true })
+      setFormData(emptyForm)
       loadSlides()
     } catch (error) {
       console.error("خطأ أثناء حفظ الشريحة:", error)
@@ -122,6 +134,10 @@ export default function SliderManagementPage() {
     setFormData({
       image_url: slide.image_url,
       mobile_image_url: slide.mobile_image_url || "",
+      headline: slide.headline || "AUGEN",
+      slogan: slide.slogan || "",
+      cta_label: slide.cta_label || "Shop Now",
+      cta_link: slide.cta_link || "/categories",
       sort_order: slide.sort_order,
       is_active: slide.is_active,
     })
@@ -149,7 +165,7 @@ export default function SliderManagementPage() {
   const handleCancel = () => {
     setShowForm(false)
     setEditingSlide(null)
-    setFormData({ image_url: "", mobile_image_url: "", sort_order: 0, is_active: true })
+    setFormData(emptyForm)
   }
 
   if (isLoading || loading) {
@@ -184,52 +200,97 @@ export default function SliderManagementPage() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {/* Desktop Image */}
                   <div className="space-y-2">
-                    <Label>صورة سطح المكتب *</Label>
-                    <div className="space-y-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) handleImageUpload(file, false)
-                        }}
-                        disabled={uploading}
-                      />
-                      {formData.image_url && (
-                        <div className="relative w-full h-40 bg-secondary rounded-lg overflow-hidden">
-                          <img src={formData.image_url} alt="معاينة" className="w-full h-full object-cover" />
-                        </div>
-                      )}
-                    </div>
+                    <UploadField
+                      label="صورة سطح المكتب *"
+                      accept="image/*"
+                      uploading={uploading}
+                      buttonText="رفع صورة"
+                      placeholder="1920x800 PNG أو JPG"
+                      status={
+                        formData.image_url && (
+                          <span className="text-sm text-green-600">✓ صورة سطح المكتب جاهزة</span>
+                        )
+                      }
+                      helperText="تظهر على الشاشات الكبيرة"
+                      onFileSelect={(file) => file && handleImageUpload(file, false)}
+                    />
+                    {formData.image_url && (
+                      <div className="relative w-full h-40 bg-secondary rounded-lg overflow-hidden">
+                        <img src={formData.image_url} alt="معاينة" className="w-full h-full object-cover" />
+                      </div>
+                    )}
                   </div>
 
                   {/* Mobile Image */}
                   <div className="space-y-2">
-                    <Label>صورة الموبايل (اختياري)</Label>
-                    <div className="space-y-2">
-                      <Input
-                        type="file"
-                        accept="image/*"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0]
-                          if (file) handleImageUpload(file, true)
-                        }}
-                        disabled={uploading}
-                      />
-                      {formData.mobile_image_url && (
-                        <div className="relative w-full h-40 bg-secondary rounded-lg overflow-hidden">
-                          <img
-                            src={formData.mobile_image_url}
-                            alt="معاينة الموبايل"
-                            className="w-full h-full object-cover"
-                          />
-                        </div>
-                      )}
-                    </div>
-                  </div>
+                    <UploadField
+                      label="صورة الموبايل (اختياري)"
+                      accept="image/*"
+                      uploading={uploading}
+                      buttonText="رفع صورة"
+                      placeholder="800x1200 PNG أو JPG"
+                      status={
+                        formData.mobile_image_url && (
+                          <span className="text-sm text-green-600">✓ صورة الموبايل جاهزة</span>
+                        )
+                      }
+                      helperText="تُستخدم على الهواتف"
+                      onFileSelect={(file) => file && handleImageUpload(file, true)}
+                    />
+                    {formData.mobile_image_url && (
+                      <div className="relative w-full h-40 bg-secondary rounded-lg overflow-hidden">
+                        <img
+                          src={formData.mobile_image_url}
+                          alt="معاينة الموبايل"
+                          className="w-full h-full object-cover"
+                        />
+                      </div>
+                    )}
+                </div>
 
-                  {/* Sort Order */}
+                {/* Messaging */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-2">
+                    <Label htmlFor="headline">العنوان العلوي</Label>
+                    <Input
+                      id="headline"
+                      value={formData.headline}
+                      onChange={(e) => setFormData({ ...formData, headline: e.target.value })}
+                      placeholder="AUGEN"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="cta_label">نص زر الدعوة</Label>
+                    <Input
+                      id="cta_label"
+                      value={formData.cta_label}
+                      onChange={(e) => setFormData({ ...formData, cta_label: e.target.value })}
+                      placeholder="Shop Now"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="slogan">الشعار</Label>
+                    <Textarea
+                      id="slogan"
+                      rows={3}
+                      value={formData.slogan}
+                      onChange={(e) => setFormData({ ...formData, slogan: e.target.value })}
+                      placeholder="أطلق أسلوبك مع أحدث إطارات أوغن"
+                    />
+                  </div>
+                  <div className="space-y-2 md:col-span-2">
+                    <Label htmlFor="cta_link">رابط زر الدعوة</Label>
+                    <Input
+                      id="cta_link"
+                      value={formData.cta_link}
+                      onChange={(e) => setFormData({ ...formData, cta_link: e.target.value })}
+                      placeholder="/categories"
+                    />
+                  </div>
+                </div>
+
+                {/* Sort Order */}
+                <div className="space-y-2">
                     <Label htmlFor="sort_order">ترتيب العرض</Label>
                     <Input
                       id="sort_order"
@@ -276,6 +337,12 @@ export default function SliderManagementPage() {
                   )}
                 </div>
                 <div className="p-4 space-y-2">
+                  <div>
+                    <p className="text-xs text-muted-foreground uppercase tracking-[0.4em]">
+                      {slide.headline || "AUGEN"}
+                    </p>
+                    {slide.slogan && <p className="text-base font-semibold">{slide.slogan}</p>}
+                  </div>
                   <div className="flex items-center justify-between">
                     <span className="text-sm text-muted-foreground">ترتيب: {slide.sort_order}</span>
                     <div className="flex items-center gap-2">
@@ -302,4 +369,3 @@ export default function SliderManagementPage() {
     </div>
   )
 }
-
