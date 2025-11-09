@@ -1,45 +1,40 @@
 import { supabase } from './supabase'
-import type { Product } from './products'
+import type { Product, ProductImage } from './products'
+import type { ParentCategory, Subcategory } from './constants'
 
 export interface SupabaseProduct {
   id: string
   name: string
-  style: string
   price: number
   quantity: number
   image: string
-  description: string
-  material: string
-  color: string
-  category: string
-  category_id: string | null
-  subcategory_id: string | null
-  color_options: Array<{ name: string; hex: string }>
+  video_url: string | null
+  parent_category: ParentCategory
+  subcategory: Subcategory
   created_at: string
   updated_at: string
+  product_images?: any[]
 }
 
 // Convert Supabase product to app Product type
-function toProduct(dbProduct: SupabaseProduct): Product {
+function toProduct(dbProduct: any): Product {
   return {
     id: dbProduct.id,
     name: dbProduct.name,
-    style: dbProduct.style,
     price: dbProduct.price,
     quantity: dbProduct.quantity,
     image: dbProduct.image,
-    description: dbProduct.description,
-    material: dbProduct.material,
-    color: dbProduct.color,
-    category: dbProduct.category,
-    category_id: dbProduct.category_id || undefined,
-    subcategory_id: dbProduct.subcategory_id || undefined,
-    colorOptions: dbProduct.color_options,
+    video_url: dbProduct.video_url,
+    parent_category: dbProduct.parent_category,
+    subcategory: dbProduct.subcategory,
+    created_at: dbProduct.created_at,
+    updated_at: dbProduct.updated_at,
+    images: dbProduct.product_images || [],
   }
 }
 
 // Convert app Product to Supabase format
-function toSupabaseProduct(product: Partial<Product>): Partial<SupabaseProduct> {
+function toSupabaseProduct(product: Partial<Product>): any {
   const supabaseProduct: any = { ...product }
   
   // Remove id if it's empty (let database auto-generate)
@@ -47,21 +42,9 @@ function toSupabaseProduct(product: Partial<Product>): Partial<SupabaseProduct> 
     delete supabaseProduct.id
   }
   
-  if (product.colorOptions !== undefined) {
-    supabaseProduct.color_options = product.colorOptions
-    delete supabaseProduct.colorOptions
-  }
-  
-  // Handle category_id - convert empty strings and undefined to null
-  if ('category_id' in product) {
-    const catId = product.category_id
-    supabaseProduct.category_id = (catId && typeof catId === 'string' && catId.trim() !== '') ? catId : null
-  }
-  
-  // Handle subcategory_id - convert empty strings and undefined to null
-  if ('subcategory_id' in product) {
-    const subId = product.subcategory_id
-    supabaseProduct.subcategory_id = (subId && typeof subId === 'string' && subId.trim() !== '') ? subId : null
+  // Remove images array (handled separately)
+  if ('images' in supabaseProduct) {
+    delete supabaseProduct.images
   }
   
   return supabaseProduct
@@ -73,15 +56,14 @@ export async function getAllProducts(): Promise<Product[]> {
     .from('products')
     .select(`
       *,
-      categories:category_id (
+      product_images (
         id,
-        name,
-        name_ar
-      ),
-      subcategories:subcategory_id (
-        id,
-        name,
-        name_ar
+        product_id,
+        image_url,
+        color_name,
+        color_hex,
+        sort_order,
+        created_at
       )
     `)
     .order('created_at', { ascending: false })
@@ -91,14 +73,25 @@ export async function getAllProducts(): Promise<Product[]> {
     throw error
   }
 
-  return data.map(toProduct)
+  return (data || []).map(toProduct)
 }
 
 // Get product by ID
 export async function getProductById(id: string): Promise<Product | null> {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
+    .select(`
+      *,
+      product_images (
+        id,
+        product_id,
+        image_url,
+        color_name,
+        color_hex,
+        sort_order,
+        created_at
+      )
+    `)
     .eq('id', id)
     .single()
 
@@ -110,20 +103,66 @@ export async function getProductById(id: string): Promise<Product | null> {
   return data ? toProduct(data) : null
 }
 
-// Get products by category
-export async function getProductsByCategory(category: string): Promise<Product[]> {
+// Get products by parent category
+export async function getProductsByParentCategory(parentCategory: ParentCategory): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
-    .select('*')
-    .eq('category', category)
+    .select(`
+      *,
+      product_images (
+        id,
+        product_id,
+        image_url,
+        color_name,
+        color_hex,
+        sort_order,
+        created_at
+      )
+    `)
+    .eq('parent_category', parentCategory)
     .order('created_at', { ascending: false })
 
   if (error) {
-    console.error('Error fetching products by category:', error)
+    console.error('Error fetching products by parent category:', error)
     throw error
   }
 
-  return data.map(toProduct)
+  return (data || []).map(toProduct)
+}
+
+// Get products by parent category and subcategory
+export async function getProductsByCategories(
+  parentCategory: ParentCategory,
+  subcategory?: Subcategory
+): Promise<Product[]> {
+  let query = supabase
+    .from('products')
+    .select(`
+      *,
+      product_images (
+        id,
+        product_id,
+        image_url,
+        color_name,
+        color_hex,
+        sort_order,
+        created_at
+      )
+    `)
+    .eq('parent_category', parentCategory)
+
+  if (subcategory) {
+    query = query.eq('subcategory', subcategory)
+  }
+
+  const { data, error } = await query.order('created_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching products by categories:', error)
+    throw error
+  }
+
+  return (data || []).map(toProduct)
 }
 
 // Create product
@@ -197,6 +236,64 @@ export async function uploadProductImage(file: File): Promise<string> {
 
   const data = await response.json()
   return data.url
+}
+
+// Upload video to Supabase storage
+export async function uploadProductVideo(file: File): Promise<string> {
+  const formData = new FormData()
+  formData.append('file', file)
+
+  const response = await fetch('/api/upload-product-video', {
+    method: 'POST',
+    body: formData,
+  })
+
+  if (!response.ok) {
+    const error = await response.json()
+    console.error('Error uploading video:', error)
+    throw new Error(error.error || 'تعذر رفع الفيديو')
+  }
+
+  const data = await response.json()
+  return data.url
+}
+
+// Add product images
+export async function addProductImages(productId: string, images: Array<{
+  image_url: string
+  color_name: string
+  color_hex: string
+  sort_order: number
+}>): Promise<ProductImage[]> {
+  const imagesToInsert = images.map(img => ({
+    ...img,
+    product_id: productId,
+  }))
+
+  const { data, error } = await supabase
+    .from('product_images')
+    .insert(imagesToInsert)
+    .select()
+
+  if (error) {
+    console.error('Error adding product images:', error)
+    throw error
+  }
+
+  return data || []
+}
+
+// Delete product image
+export async function deleteProductImageById(imageId: string): Promise<void> {
+  const { error } = await supabase
+    .from('product_images')
+    .delete()
+    .eq('id', imageId)
+
+  if (error) {
+    console.error('Error deleting product image:', error)
+    throw error
+  }
 }
 
 // Delete image from Supabase storage

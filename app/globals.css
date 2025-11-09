@@ -289,3 +289,89 @@
     }
   }
 }
+
+/* Mobile Optimizations */
+@media (max-width: 768px) {
+  /* Ensure proper touch target sizes */
+  button, a, input, select, textarea {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Prevent zoom on input focus for iOS */
+  input, select, textarea {
+    font-size: 16px !important;
+  }
+
+  /* Smooth scrolling for mobile */
+  * {
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* Fix iOS Safari viewport height issues */
+  body {
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
+  html {
+    height: -webkit-fill-available;
+  }
+
+  /* Improve tap highlights */
+  * {
+    -webkit-tap-highlight-color: rgba(0, 0, 0, 0.1);
+  }
+
+  /* Optimize grid layouts for mobile */
+  .grid {
+    gap: 0.75rem;
+  }
+
+  /* Ensure modals and overlays work properly on mobile */
+  [role="dialog"],
+  [role="alertdialog"] {
+    position: fixed !important;
+  }
+}
+
+/* iOS specific fixes */
+@supports (-webkit-touch-callout: none) {
+  /* Fix for iOS Safari bottom safe area */
+  body {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Fix input focus zoom */
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    font-size: 16px;
+  }
+}
+
+/* Responsive padding utilities */
+@media (max-width: 640px) {
+  .container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+}
+
+/* Better form input styling on mobile */
+@media (max-width: 768px) {
+  input[type="text"],
+  input[type="email"],
+  input[type="tel"],
+  input[type="number"],
+  input[type="password"],
+  select,
+  textarea {
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+  }
+}

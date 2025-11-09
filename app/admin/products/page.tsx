@@ -4,7 +4,7 @@ import { useState, useEffect } from "react"
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 import AdminHeader from "@/components/admin-header"
 import { ProductList } from "@/components/admin/product-list"
-import { ProductForm } from "@/components/admin/product-form"
+import { ProductFormNew } from "@/components/admin/product-form-new"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Plus, Loader2, X } from "lucide-react"
@@ -14,6 +14,7 @@ import {
   createProduct,
   updateProduct,
   deleteProduct,
+  addProductImages,
   deleteProductImage,
 } from "@/lib/product-service"
 import { toast } from "@/hooks/use-toast"
@@ -62,14 +63,26 @@ export default function AdminProductsPage() {
     return null
   }
 
-  const handleAddProduct = async (product: Product) => {
+  const handleAddProduct = async (
+    product: Partial<Product>,
+    images: Array<{ image_url: string; color_name: string; color_hex: string; sort_order: number }>
+  ) => {
     try {
       setSubmitting(true)
       
       if (editingProduct) {
         // Update existing product
         const updated = await updateProduct(editingProduct.id, product)
-        setProducts(products.map((p) => (p.id === updated.id ? updated : p)))
+        
+        // Add new images if any
+        if (images.length > 0) {
+          await addProductImages(updated.id, images)
+        }
+        
+        // Reload product to get updated images
+        const refreshed = await getAllProducts()
+        setProducts(refreshed)
+        
         toast({
           title: "تم بنجاح",
           description: "تم تحديث المنتج بنجاح",
@@ -77,8 +90,17 @@ export default function AdminProductsPage() {
         setEditingProduct(null)
       } else {
         // Create new product
-        const created = await createProduct(product)
-        setProducts([created, ...products])
+        const created = await createProduct(product as any)
+        
+        // Add images
+        if (images.length > 0) {
+          await addProductImages(created.id, images)
+        }
+        
+        // Reload products to get the new product with images
+        const refreshed = await getAllProducts()
+        setProducts(refreshed)
+        
         toast({
           title: "تم بنجاح",
           description: "تم إنشاء المنتج بنجاح",
@@ -157,7 +179,7 @@ export default function AdminProductsPage() {
           {/* Form */}
           {showForm && (
             <Card className="p-6">
-              <ProductForm 
+              <ProductFormNew 
                 product={editingProduct || undefined} 
                 onSubmit={handleAddProduct} 
                 onCancel={handleCancel}

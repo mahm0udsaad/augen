@@ -9,6 +9,7 @@ import WhatsAppButton from "./whatsapp-button"
 import { useCart } from "@/lib/cart-context"
 import { ShoppingCart, Check, Heart } from "lucide-react"
 import { useFavorites } from "@/lib/favorites-context"
+import ProductMediaCarousel from "./product-media-carousel"
 
 interface ProductDetailProps {
   product: Product
@@ -18,7 +19,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [quantity, setQuantity] = useState(1)
   const [addedToCart, setAddedToCart] = useState(false)
   const [isTransitioning, setIsTransitioning] = useState(true)
-  const [selectedColor, setSelectedColor] = useState(product.colorOptions?.[0]?.name || "")
+  const [selectedColor, setSelectedColor] = useState("")
   const { addToCart } = useCart()
   const { toggleFavorite, isFavorite } = useFavorites()
   const availableQuantity = product.quantity || 0
@@ -48,25 +49,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     setTimeout(() => setAddedToCart(false), 2000)
   }
 
-  const relatedItems = products.filter((p) => p.category === product.category && p.id !== product.id).slice(0, 4)
+  const relatedItems = []
 
   return (
     <section className="px-0 py-0 md:px-2 md:py-6" dir="rtl">
       <div className="max-w-7xl mx-auto md:rounded-lg overflow-hidden">
         <div className="flex flex-col md:grid md:grid-cols-2 md:gap-12">
-          {/* Product Image - Full screen height on mobile */}
-          <div className="flex items-start md:items-center justify-center order-1 md:order-1 md:rounded-lg md:overflow-hidden">
-            <div
-              className="relative w-full md:aspect-square aspect-[9/10] rounded-b-3xl md:rounded-lg overflow-hidden bg-secondary md:bg-secondary"
-              style={{ viewTransitionName: `product-image-${product.id}` }}
-            >
-              <Image
-                src={product.image || "/placeholder.svg"}
-                alt={product.name}
-                fill
-                className="object-cover"
-                priority
-                sizes="(max-width: 768px) 100vw, 50vw"
+          {/* Product Media Carousel - Full screen height on mobile */}
+          <div className="flex items-start md:items-center justify-center order-1 md:order-1 md:rounded-lg md:overflow-hidden px-4 md:px-0 py-4 md:py-0">
+            <div className="w-full">
+              <ProductMediaCarousel
+                videoUrl={product.video_url}
+                images={product.images || []}
+                productName={product.name}
+                onColorSelect={(hex) => setSelectedColor(hex)}
               />
             </div>
           </div>

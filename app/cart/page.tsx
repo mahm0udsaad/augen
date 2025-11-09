@@ -11,6 +11,8 @@ import { Trash2, Minus, Plus, ShoppingBag, CheckCircle } from 'lucide-react';
 import { toast } from 'sonner';
 import Link from 'next/link';
 import Header from '@/components/header';
+import CheckoutBottomSheet from '@/components/checkout-bottom-sheet';
+import { useMediaQuery } from '@/hooks/use-media-query';
 
 const CUSTOMER_INFO_STORAGE_KEY = 'augen_checkout_info';
 
@@ -20,6 +22,7 @@ export default function CartPage() {
   const [isOrderSubmitted, setIsOrderSubmitted] = useState(false);
   const [orderNumber, setOrderNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const isDesktop = useMediaQuery('(min-width: 768px)');
 
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -249,136 +252,155 @@ export default function CartPage() {
         </div>
       </div>
 
-      {/* Checkout Dialog */}
-      <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-        <DialogContent className="max-w-2xl" dir="rtl">
-          {isOrderSubmitted ? (
-            <div className="text-center py-8 space-y-6">
-              <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
-              <DialogHeader>
-                <DialogTitle className="text-2xl">تم إنشاء الطلب بنجاح!</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <p className="text-lg">
-                  رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
-                </p>
-                <p className="text-muted-foreground">
-                  سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
-                </p>
-              </div>
-              <div className="flex gap-3 justify-center">
-                <Link href="/categories">
-                  <Button size="lg">مواصلة التسوق</Button>
-                </Link>
-                <Button
-                  variant="outline"
-                  size="lg"
-                  onClick={() => {
-                    setIsCheckoutOpen(false);
-                    setIsOrderSubmitted(false);
-                  }}
-                >
-                  إغلاق
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <>
-              <DialogHeader>
-                <DialogTitle className="text-2xl">إتمام الطلب</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label htmlFor="name">
-                    الاسم الكامل <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="name"
-                    value={customerInfo.name}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, name: e.target.value })
-                    }
-                    placeholder="أدخل اسمك الكامل"
-                    required
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="whatsapp">
-                    رقم الواتساب <span className="text-destructive">*</span>
-                  </Label>
-                  <Input
-                    id="whatsapp"
-                    value={customerInfo.whatsapp}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, whatsapp: e.target.value })
-                    }
-                    placeholder="+20 1234567890"
-                    required
-                  />
-                  <p className="text-xs text-muted-foreground">
-                    سيتم التواصل معك عبر هذا الرقم
+      {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
+      {isDesktop ? (
+        <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+          <DialogContent className="max-w-2xl" dir="rtl">
+            {isOrderSubmitted ? (
+              <div className="text-center py-8 space-y-6">
+                <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
+                <DialogHeader>
+                  <DialogTitle className="text-2xl">تم إنشاء الطلب بنجاح!</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <p className="text-lg">
+                    رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
                   </p>
                 </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
-                  <Input
-                    id="email"
-                    type="email"
-                    value={customerInfo.email}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, email: e.target.value })
-                    }
-                    placeholder="example@domain.com"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="address">العنوان (اختياري)</Label>
-                  <Textarea
-                    id="address"
-                    value={customerInfo.address}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, address: e.target.value })
-                    }
-                    placeholder="أدخل عنوانك الكامل"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
-                  <Textarea
-                    id="notes"
-                    value={customerInfo.notes}
-                    onChange={(e) =>
-                      setCustomerInfo({ ...customerInfo, notes: e.target.value })
-                    }
-                    placeholder="أي ملاحظات خاصة بالطلب"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="border-t pt-4">
-                  <div className="flex justify-between text-lg font-bold mb-4">
-                    <span>المجموع الكلي:</span>
-                    <span className="text-primary">{formatPrice(getTotalPrice())}</span>
-                  </div>
+                <div className="flex gap-3 justify-center">
+                  <Link href="/categories">
+                    <Button size="lg">مواصلة التسوق</Button>
+                  </Link>
                   <Button
-                    onClick={handleSubmitOrder}
-                    className="w-full"
+                    variant="outline"
                     size="lg"
-                    disabled={isSubmitting}
+                    onClick={() => {
+                      setIsCheckoutOpen(false);
+                      setIsOrderSubmitted(false);
+                    }}
                   >
-                    {isSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+                    إغلاق
                   </Button>
                 </div>
               </div>
-            </>
-          )}
-        </DialogContent>
-      </Dialog>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl">إتمام الطلب</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="name">
+                      الاسم الكامل <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="name"
+                      value={customerInfo.name}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, name: e.target.value })
+                      }
+                      placeholder="أدخل اسمك الكامل"
+                      required
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="whatsapp">
+                      رقم الواتساب <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="whatsapp"
+                      value={customerInfo.whatsapp}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, whatsapp: e.target.value })
+                      }
+                      placeholder="+20 1234567890"
+                      required
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      سيتم التواصل معك عبر هذا الرقم
+                    </p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={customerInfo.email}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, email: e.target.value })
+                      }
+                      placeholder="example@domain.com"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="address">العنوان (اختياري)</Label>
+                    <Textarea
+                      id="address"
+                      value={customerInfo.address}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, address: e.target.value })
+                      }
+                      placeholder="أدخل عنوانك الكامل"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                    <Textarea
+                      id="notes"
+                      value={customerInfo.notes}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, notes: e.target.value })
+                      }
+                      placeholder="أي ملاحظات خاصة بالطلب"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="border-t pt-4">
+                    <div className="flex justify-between text-lg font-bold mb-4">
+                      <span>المجموع الكلي:</span>
+                      <span className="text-primary">{formatPrice(getTotalPrice())}</span>
+                    </div>
+                    <Button
+                      onClick={handleSubmitOrder}
+                      className="w-full"
+                      size="lg"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <CheckoutBottomSheet
+          isOpen={isCheckoutOpen}
+          onClose={() => {
+            setIsCheckoutOpen(false);
+            if (isOrderSubmitted) {
+              setIsOrderSubmitted(false);
+            }
+          }}
+          customerInfo={customerInfo}
+          onCustomerInfoChange={setCustomerInfo}
+          onSubmitOrder={handleSubmitOrder}
+          isSubmitting={isSubmitting}
+          isOrderSubmitted={isOrderSubmitted}
+          orderNumber={orderNumber}
+          totalPrice={formatPrice(getTotalPrice())}
+        />
+      )}
     </>
   );
 }
