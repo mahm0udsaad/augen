@@ -64,7 +64,8 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
         const isVisible = visibleItems.has(display.id)
         const parentKey = display.category_key as ParentCategory
         const allowedSubcategories = PARENT_SUBCATEGORY_MAP[parentKey] || (Object.keys(SUBCATEGORIES) as Subcategory[])
-        const subcats = allowedSubcategories.map((key) => [key, SUBCATEGORIES[key]])
+        const subcats: [Subcategory, (typeof SUBCATEGORIES)[Subcategory]][] =
+          allowedSubcategories.map((key) => [key, SUBCATEGORIES[key]])
         const parentFallback = PARENT_CATEGORIES[display.category_key as keyof typeof PARENT_CATEGORIES]
         const displayTitle = isEnglish
           ? display.title_en || parentFallback?.name_en || display.title_ar
@@ -114,7 +115,7 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                     </p>
                   )}
                   <Link
-                    href={`/categories?parent=${display.category_key}`}
+                    href={`/products?parent=${display.category_key}`}
                     className="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-xl"
                   >
                     {primaryCta}
@@ -136,14 +137,14 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
               </div>
             </div>
 
-            <div className={`grid grid-cols-1 gap-4 md:gap-6 ${subcats.length < 3 ? "grid-cols-2" : "grid-cols-3"}`}>
+            <div className={`grid gap-4 md:gap-6 ${subcats.length < 3 ? "grid-cols-2" : "sm:grid-cols-3 grid-cols-2"}`}>
               {subcats.map(([key, subcat], index) => {
                 const card = getCardForSubcategory(display.category_key, key)
 
                 return (
                   <Link
-                    key={key}
-                    href={`/categories?parent=${display.category_key}&sub=${key}`}
+                    key={String(key)}
+                    href={`/products?parent=${display.category_key}&sub=${key}`}
                     className={`group relative h-[280px] rounded-xl overflow-hidden bg-gray-900 hover:shadow-2xl transition-all duration-500 hover:scale-[1.02] ${
                       isVisible
                         ? "opacity-100 translate-y-0"

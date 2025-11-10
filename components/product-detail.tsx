@@ -10,6 +10,10 @@ import { useCart } from "@/lib/cart-context"
 import { ShoppingCart, Check, Heart } from "lucide-react"
 import { useFavorites } from "@/lib/favorites-context"
 import ProductMediaCarousel from "./product-media-carousel"
+import { useMediaQuery } from "@/hooks/use-media-query"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import CheckoutBottomSheet from "@/components/checkout-bottom-sheet"
+import { toast } from "sonner"
 
 interface ProductDetailProps {
   product: Product
@@ -24,6 +28,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const { toggleFavorite, isFavorite } = useFavorites()
   const availableQuantity = product.quantity || 0
   const favoriteActive = isFavorite(product.id)
+  const isDesktop = useMediaQuery("(min-width: 768px)")
+
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
+  const [isOrderSubmitted, setIsOrderSubmitted] = useState(false)
+  const [orderNumber, setOrderNumber] = useState("")
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [customerInfo, setCustomerInfo] = useState({
+    name: "",
+    whatsapp: "",
+    email: "",
+    address: "",
+    notes: "",
+  })
+  const CUSTOMER_INFO_STORAGE_KEY = "augen_checkout_info"
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -31,6 +49,26 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     }, 1200)
     return () => clearTimeout(timer)
   }, [])
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(CUSTOMER_INFO_STORAGE_KEY)
+      if (stored) {
+        const parsed = JSON.parse(stored)
+        setCustomerInfo((prev) => ({ ...prev, ...parsed }))
+      }
+    } catch {
+      // ignore
+    }
+  }, [])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(CUSTOMER_INFO_STORAGE_KEY, JSON.stringify(customerInfo))
+    } catch {
+      // ignore
+    }
+  }, [customerInfo])
 
   const handleAddToCart = () => {
     if (availableQuantity <= 0) {
@@ -47,6 +85,64 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     })
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
+  }
+
+  const handleOrderNow = () => {
+    if (availableQuantity <= 0) {
+      return
+    }
+    setIsCheckoutOpen(true)
+  }
+
+  const formatPrice = (price: number) =>
+    new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(price)
+
+  const handleSubmitOrder = async () => {
+    if (!customerInfo.name || !customerInfo.whatsapp) {
+      toast.error("الرجاء إدخال الاسم ورقم الواتساب")
+      return
+    }
+    const whatsappRegex = /^[+]?[0-9]{10,15}$/
+    if (!whatsappRegex.test(customerInfo.whatsapp.replace(/\s/g, ""))) {
+      toast.error("رقم الواتساب غير صحيح")
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          customerName: customerInfo.name,
+          customerWhatsapp: customerInfo.whatsapp,
+          customerEmail: customerInfo.email,
+          customerAddress: customerInfo.address,
+          notes: customerInfo.notes,
+          items: [
+            {
+              productId: product.id,
+              productName: product.name,
+              productImage: product.image,
+              quantity: quantity,
+              unitPrice: product.price,
+            },
+          ],
+        }),
+      })
+      const data = await response.json()
+      if (!response.ok) {
+        throw new Error(data.error || "فشل إنشاء الطلب")
+      }
+      setOrderNumber(data.order.order_number)
+      setIsOrderSubmitted(true)
+      toast.success("تم إنشاء الطلب بنجاح!")
+    } catch (error: any) {
+      console.error("Error submitting order:", error)
+      toast.error(error.message || "حدث خطأ أثناء إنشاء الطلب")
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   const relatedItems = []
@@ -163,6 +259,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   </button>
                 </div>
               )}
+
+              {/* Order Now - must appear above Add to Cart */}
+              <button
+                onClick={handleOrderNow}
+                disabled={availableQuantity <= 0}
+                className={`w-full px-4 md:px-6 py-3 md:py-4 rounded-lg transition-all font-semibold text-base md:text-lg min-h-[44px] md:min-h-[48px] ${
+                  availableQuantity <= 0
+                    ? "bg-gray-300 text-gray-500 cursor-not-allowed"
+                    : "bg-accent text-accent-foreground hover:bg-accent/90 active:bg-accent/80"
+                }`}
+                aria-label="اطلب الآن"
+              >
+                اطلب الآن
+              </button>
 
               <button
                 onClick={handleAddToCart}
@@ -385,6 +495,139 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           </div>
         </div>
       </div>
+
+      {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
+      {isDesktop ? (
+        <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
+          <DialogContent className="max-w-2xl" dir="rtl">
+            {isOrderSubmitted ? (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="text-2xl">تم إنشاء الطلب بنجاح!</DialogTitle>
+                </DialogHeader>
+                <div className="py-6 text-center space-y-3">
+                  <p className="text-lg">
+                    رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
+                  </p>
+                  <p className="text-muted-foreground">
+                    سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
+                  </p>
+                </div>
+                <div className="grid grid-cols-2 gap-2">
+                  <button
+                    onClick={() => {
+                      setIsCheckoutOpen(false)
+                      setIsOrderSubmitted(false)
+                    }}
+                    className="px-4 py-2 rounded-md border font-semibold"
+                  >
+                    إغلاق
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <DialogHeader>
+                  <DialogTitle>إتمام الطلب</DialogTitle>
+                </DialogHeader>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-sm font-medium">الاسم</label>
+                      <input
+                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                        value={customerInfo.name}
+                        onChange={(e) => setCustomerInfo((p) => ({ ...p, name: e.target.value }))}
+                        placeholder="الاسم الكامل"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">واتساب</label>
+                      <input
+                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                        value={customerInfo.whatsapp}
+                        onChange={(e) => setCustomerInfo((p) => ({ ...p, whatsapp: e.target.value }))}
+                        placeholder="+20xxxxxxxxxx"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">البريد الإلكتروني (اختياري)</label>
+                      <input
+                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                        value={customerInfo.email}
+                        onChange={(e) => setCustomerInfo((p) => ({ ...p, email: e.target.value }))}
+                        placeholder="example@email.com"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">العنوان</label>
+                      <input
+                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                        value={customerInfo.address}
+                        onChange={(e) => setCustomerInfo((p) => ({ ...p, address: e.target.value }))}
+                        placeholder="العنوان والتفاصيل"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-sm font-medium">ملاحظات</label>
+                      <textarea
+                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                        rows={3}
+                        value={customerInfo.notes}
+                        onChange={(e) => setCustomerInfo((p) => ({ ...p, notes: e.target.value }))}
+                        placeholder="تفاصيل إضافية"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-4">
+                    <div className="rounded-md border p-4">
+                      <div className="flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">المنتج</span>
+                        <span className="font-medium">{product.name}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">الكمية</span>
+                        <span className="font-medium">{quantity}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">الإجمالي</span>
+                        <span className="font-bold text-primary">
+                          {formatPrice(product.price * quantity)}
+                        </span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleSubmitOrder}
+                      className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground font-semibold"
+                      disabled={isSubmitting}
+                    >
+                      {isSubmitting ? "جاري الإرسال..." : "تأكيد الطلب"}
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
+      ) : (
+        <CheckoutBottomSheet
+          isOpen={isCheckoutOpen}
+          onClose={() => {
+            setIsCheckoutOpen(false)
+            if (isOrderSubmitted) {
+              setIsOrderSubmitted(false)
+            }
+          }}
+          customerInfo={customerInfo}
+          onCustomerInfoChange={setCustomerInfo}
+          onSubmitOrder={handleSubmitOrder}
+          isSubmitting={isSubmitting}
+          isOrderSubmitted={isOrderSubmitted}
+          orderNumber={orderNumber}
+          totalPrice={formatPrice(product.price * quantity)}
+        />
+      )}
     </section>
   )
 }

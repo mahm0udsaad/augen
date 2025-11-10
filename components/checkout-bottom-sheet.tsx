@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { createPortal } from "react-dom"
 import { X, CheckCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -38,6 +39,12 @@ export default function CheckoutBottomSheet({
   totalPrice,
 }: CheckoutBottomSheetProps) {
   const [isAnimating, setIsAnimating] = useState(false)
+  const [mounted, setMounted] = useState(false)
+
+  useEffect(() => {
+    setMounted(true)
+    return () => setMounted(false)
+  }, [])
 
   useEffect(() => {
     if (isOpen) {
@@ -58,13 +65,13 @@ export default function CheckoutBottomSheet({
     }
   }, [isOpen])
 
-  if (!isOpen && !isAnimating) return null
+  if (!mounted || (!isOpen && !isAnimating)) return null
 
-  return (
+  const sheet = (
     <>
       {/* Overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 z-50 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
           isOpen ? "opacity-100" : "opacity-0"
         }`}
         onClick={onClose}
@@ -72,12 +79,13 @@ export default function CheckoutBottomSheet({
 
       {/* Bottom Sheet */}
       <div
-        className={`fixed inset-x-0 bottom-0 z-50 bg-background rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out ${
+        className={`fixed inset-x-0 bottom-0 z-[60] bg-background rounded-t-3xl shadow-2xl transition-transform duration-300 ease-out flex flex-col ${
           isOpen ? "translate-y-0" : "translate-y-full"
         }`}
         style={{
           maxHeight: "calc(var(--vh, 1vh) * 90)",
           height: "auto",
+          paddingBottom: "env(safe-area-inset-bottom)",
         }}
         dir="rtl"
       >
@@ -97,12 +105,7 @@ export default function CheckoutBottomSheet({
         </div>
 
         {/* Content */}
-        <div
-          className="overflow-y-auto px-6 pb-6"
-          style={{
-            maxHeight: "calc(var(--vh, 1vh) * 90 - 120px)",
-          }}
-        >
+        <div className="overflow-y-auto px-6 pb-6 flex-1" style={{ paddingBottom: "max(24px, env(safe-area-inset-bottom))" }}>
           {isOrderSubmitted ? (
             <div className="text-center py-8 space-y-6">
               <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
@@ -235,5 +238,7 @@ export default function CheckoutBottomSheet({
       </div>
     </>
   )
+
+  return createPortal(sheet, document.body)
 }
 

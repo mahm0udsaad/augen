@@ -102,6 +102,13 @@ const subcategoryVisualConfig: Record<Subcategory, Omit<SubcategoryShowcaseCard,
     overlayGradient: "linear-gradient(180deg, rgba(0,0,0,0.78), rgba(45,45,45,0.6))",
     pattern: "bg-[radial-gradient(circle_at_50%_0%,rgba(255,255,255,0.25),transparent_55%)]",
   },
+  high_quality: {
+    tagline: "مواد فائقة وعدسات احترافية",
+    accent: "#fafafa",
+    backgroundImage: "/images/hero.png",
+    overlayGradient: "linear-gradient(140deg, rgba(0,0,0,0.82), rgba(25,25,25,0.68))",
+    pattern: "bg-[radial-gradient(circle_at_60%_20%,rgba(255,255,255,0.22),transparent_58%)]",
+  },
 }
 
 export function createCategoryShowcase(

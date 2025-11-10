@@ -1,10 +1,13 @@
 "use client"
 
+import { useState } from "react"
 import type { Product } from "@/lib/products"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Edit, Trash2 } from "lucide-react"
+import { Edit, Trash2, Tag } from "lucide-react"
 import Image from "next/image"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { toast } from "@/hooks/use-toast"
 
 interface ProductListProps {
   products: Product[]
@@ -13,6 +16,59 @@ interface ProductListProps {
 }
 
 export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
+  const [sellOpen, setSellOpen] = useState(false)
+  const [sellProduct, setSellProduct] = useState<Product | null>(null)
+  const [sellQuantity, setSellQuantity] = useState<number>(1)
+  const [sellNote, setSellNote] = useState<string>("")
+  const [submitting, setSubmitting] = useState(false)
+
+  const openSell = (product: Product) => {
+    setSellProduct(product)
+    setSellQuantity(1)
+    setSellNote("")
+    setSellOpen(true)
+  }
+
+  const submitSell = async () => {
+    if (!sellProduct) return
+    if (sellQuantity <= 0) {
+      toast({
+        title: "خطأ",
+        description: "الكمية يجب أن تكون أكبر من صفر",
+        variant: "destructive",
+      })
+      return
+    }
+    setSubmitting(true)
+    try {
+      const res = await fetch("/api/admin/sell", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          productId: sellProduct.id,
+          quantity: sellQuantity,
+          note: sellNote,
+        }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        throw new Error(data.error || "فشل تسجيل عملية البيع")
+      }
+      toast({
+        title: "تم",
+        description: "تم تسجيل البيع وتحديث المخزون",
+      })
+      setSellOpen(false)
+    } catch (e: any) {
+      toast({
+        title: "خطأ",
+        description: e.message || "تعذر إتمام العملية",
+        variant: "destructive",
+      })
+    } finally {
+      setSubmitting(false)
+    }
+  }
   if (products.length === 0) {
     return (
       <Card className="p-12 text-center" dir="rtl">
@@ -22,6 +78,7 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
   }
 
   return (
+    <>
     <div className="grid gap-4" dir="rtl">
       {products.map((product) => (
         <Card key={product.id} className="p-4 hover:shadow-md transition-shadow">
@@ -59,6 +116,10 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
 
             {/* Actions */}
             <div className="flex gap-2">
+              <Button variant="secondary" size="sm" onClick={() => openSell(product)} className="flex items-center gap-2">
+                <Tag className="w-4 h-4" />
+                <span className="hidden sm:inline">بيع</span>
+              </Button>
               <Button variant="outline" size="sm" onClick={() => onEdit(product)} className="flex items-center gap-2">
                 <Edit className="w-4 h-4" />
                 <span className="hidden sm:inline">تعديل</span>
@@ -77,5 +138,48 @@ export function ProductList({ products, onEdit, onDelete }: ProductListProps) {
         </Card>
       ))}
     </div>
+      <Dialog open={sellOpen} onOpenChange={setSellOpen}>
+        <DialogContent className="max-w-md" dir="rtl">
+          <DialogHeader>
+            <DialogTitle>تسجيل بيع خارج الموقع</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="rounded border p-3 text-sm">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">المنتج</span>
+                <span className="font-medium">{sellProduct?.name}</span>
+              </div>
+              <div className="mt-1 flex justify-between">
+                <span className="text-muted-foreground">المخزون الحالي</span>
+                <span className="font-medium">{sellProduct?.quantity}</span>
+              </div>
+            </div>
+            <div>
+              <label className="text-sm font-medium">الكمية</label>
+              <input
+                type="number"
+                min={1}
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                value={sellQuantity}
+                onChange={(e) => setSellQuantity(parseInt(e.target.value || "1"))}
+              />
+            </div>
+            <div>
+              <label className="text-sm font-medium">ملاحظة (اختياري)</label>
+              <textarea
+                className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                rows={3}
+                value={sellNote}
+                onChange={(e) => setSellNote(e.target.value)}
+                placeholder="تفاصيل عملية البيع"
+              />
+            </div>
+            <Button onClick={submitSell} className="w-full" disabled={submitting}>
+              {submitting ? "جارٍ الحفظ..." : "تسجيل البيع وتحديث المخزون"}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }

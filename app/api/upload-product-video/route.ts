@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabase-admin'
 
 export async function POST(request: NextRequest) {
   try {
+    const bucketName = 'product-videos'
+
     const formData = await request.formData()
     const file = formData.get('file') as File
 
@@ -33,23 +35,59 @@ export async function POST(request: NextRequest) {
     const arrayBuffer = await file.arrayBuffer()
     const buffer = Buffer.from(arrayBuffer)
 
-    // Upload to Supabase storage
-    const { data, error } = await supabaseAdmin.storage
-      .from('products')
+    // Helper to attempt upload to Supabase storage (videos bucket)
+    const attemptUpload = async () =>
+      await supabaseAdmin.storage
+      .from(bucketName)
       .upload(filePath, buffer, {
         contentType: file.type,
         upsert: false,
       })
 
+    // First upload attempt
+    let { data, error } = await attemptUpload()
+
+    // If bucket not found, create it and retry once
+    const isBucketNotFound =
+      !!error &&
+      (error.message?.toLowerCase().includes('bucket not found') ||
+        (error as any).statusCode === '404' ||
+        (error as any).status === 404 ||
+        ((error as any).status === 400 && (error as any).statusCode === '404'))
+
+    if (isBucketNotFound) {
+      const { error: createError } = await supabaseAdmin.storage.createBucket(bucketName, {
+        public: true,
+        allowedMimeTypes: ['video/*'],
+        fileSizeLimit: '50MB',
+      })
+      // Ignore conflict if already exists
+      const isAlreadyExists =
+        !!createError &&
+        (createError.message?.toLowerCase().includes('exists') ||
+          (createError as any).statusCode === '409' ||
+          (createError as any).status === 409)
+      if (createError && !isAlreadyExists) {
+        console.error('Failed to create videos bucket:', createError)
+        return NextResponse.json({ error: 'تعذر إنشاء سعة تخزين للفيديوهات', details: createError.message }, { status: 500 })
+      }
+      // Retry upload once
+      const retry = await attemptUpload()
+      data = retry.data
+      error = retry.error
+    }
+
     if (error) {
       console.error('Error uploading video:', error)
-      return NextResponse.json({ error: 'فشل في رفع الفيديو' }, { status: 500 })
+      return NextResponse.json({ error: 'فشل في رفع الفيديو', details: error.message, statusCode: (error as any).statusCode ?? (error as any).status }, { status: 500 })
     }
 
     // Get public URL
-    const {
-      data: { publicUrl },
-    } = supabaseAdmin.storage.from('products').getPublicUrl(data.path)
+    if (!data?.path) {
+      return NextResponse.json({ error: 'فشل في إنشاء مسار الملف بعد الرفع' }, { status: 500 })
+    }
+    const { data: urlData } = supabaseAdmin.storage.from(bucketName).getPublicUrl(data.path)
+    const publicUrl = urlData.publicUrl
 
     return NextResponse.json({ url: publicUrl })
   } catch (error) {

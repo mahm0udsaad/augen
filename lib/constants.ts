@@ -40,6 +40,13 @@ export const SUBCATEGORIES = {
     description_ar: 'في بعض الأحيان، كل ما تحتاجه هو منظور جديد',
     description_en: 'Sometimes, all you need is a new perspective',
   },
+  high_quality: {
+    id: 'high_quality',
+    name_ar: 'عالية الجودة',
+    name_en: 'High Quality',
+    description_ar: 'اختيار من خامات وعدسات ممتازة لأداء فائق',
+    description_en: 'Premium materials and lenses for superior performance',
+  },
 } as const;
 
 // Type exports for TypeScript
@@ -47,8 +54,8 @@ export type ParentCategory = keyof typeof PARENT_CATEGORIES;
 export type Subcategory = keyof typeof SUBCATEGORIES;
 
 export const PARENT_SUBCATEGORY_MAP: Record<ParentCategory, Subcategory[]> = {
-  sunglasses: ["man", "woman"],
-  optical_glasses: ["man", "woman", "child"],
+  sunglasses: ["man", "woman", "high_quality"],
+  optical_glasses: ["man", "woman", "child", "high_quality"],
 }
 
 // Helper functions

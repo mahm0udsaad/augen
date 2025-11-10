@@ -114,40 +114,24 @@ export default function CategoriesPageClient({
 
   const navigateWithParams = (params: URLSearchParams) => {
     const query = params.toString()
-    router.push(query ? `/categories?${query}` : "/categories", { scroll: false })
+    router.push(query ? `/products?${query}` : "/products", { scroll: false })
   }
 
   const handleCategoryClick = (categoryId: ParentCategory) => {
-    const params = new URLSearchParams(searchParams.toString())
-    const isActive = params.get("parent") === categoryId
-
-    if (isActive) {
-      params.delete("parent")
-      params.delete("sub")
-    } else {
-      params.set("parent", categoryId)
-      params.delete("sub")
-    }
-
+    const params = new URLSearchParams()
+    params.set("parent", categoryId)
     navigateWithParams(params)
   }
 
   const handleSubcategoryClick = (subcategoryId: Subcategory, parentId: ParentCategory) => {
-    const params = new URLSearchParams(searchParams.toString())
-    const isActive = params.get("sub") === subcategoryId
-
-    if (isActive) {
-      params.delete("sub")
-    } else {
-      params.set("sub", subcategoryId)
-      params.set("parent", parentId)
-    }
-
+    const params = new URLSearchParams()
+    params.set("parent", parentId)
+    params.set("sub", subcategoryId)
     navigateWithParams(params)
   }
 
   const clearFilters = () => {
-    router.push("/categories", { scroll: false })
+    router.push("/products", { scroll: false })
   }
 
   if (loading) {
@@ -306,45 +290,19 @@ export default function CategoriesPageClient({
             </div>
           </div>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold text-slate-900">المنتجات</h2>
-                <p className="text-sm text-slate-500">
-                  {activeFilterLabel ? `نعرض الآن منتجات ضمن "${activeFilterLabel}"` : "جميع منتجاتنا المتاحة حالياً"}
-                </p>
-              </div>
-              {(parentFilter || subFilter) && (
-                <button
-                  onClick={clearFilters}
-                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white"
-                >
-                  إعادة التصفية
-                </button>
-              )}
+          <div className="space-y-6 text-center py-10">
+            <h2 className="text-2xl font-bold text-slate-900">اذهب إلى صفحة المنتجات</h2>
+            <p className="text-sm text-slate-600">
+              اختر أي فئة أو فئة فرعية أعلاه للانتقال مباشرة إلى صفحة المنتجات المصفّاة.
+            </p>
+            <div>
+              <button
+                onClick={() => router.push("/products")}
+                className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white"
+              >
+                عرض كل المنتجات
+              </button>
             </div>
-
-            {filteredProducts.length === 0 ? (
-              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 py-16 text-center">
-                <Layers className="h-12 w-12 text-slate-400" />
-                <p className="mt-4 text-lg font-semibold text-slate-900">لا توجد منتجات مطابقة</p>
-                <p className="text-sm text-slate-500">جرب تغيير الفئة أو قم بإعادة التصفية لعرض جميع المنتجات.</p>
-                <button
-                  onClick={clearFilters}
-                  className="mt-6 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white"
-                >
-                  عرض كل المنتجات
-                </button>
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {filteredProducts.map((product, index) => (
-                  <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
-                    <ProductCard product={product} />
-                  </div>
-                ))}
-              </div>
-            )}
           </div>
           </div>
       </section>

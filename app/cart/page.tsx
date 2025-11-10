@@ -155,12 +155,12 @@ export default function CartPage() {
               {items.map((item) => (
                 <div
                   key={item.productId}
-                  className="bg-card rounded-lg p-4 shadow-sm border flex gap-4"
+                  className="bg-card rounded-lg p-4 shadow-sm border flex gap-4 overflow-hidden"
                 >
                   <img
                     src={item.productImage}
                     alt={item.productName}
-                    className="w-24 h-24 object-cover rounded-lg"
+                    className="w-24 h-24 object-cover rounded-lg shrink-0"
                   />
                   <div className="flex-1">
                     <h3 className="font-semibold text-lg mb-2">{item.productName}</h3>
