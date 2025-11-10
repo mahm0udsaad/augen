@@ -18,14 +18,28 @@ interface CarouselSlide {
   cta_link?: string | null
 }
 
+type Language = "en" | "ar"
+
 interface HeroCarouselProps {
   slides: CarouselSlide[]
   autoPlayInterval?: number
+  language?: Language
 }
 
-export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCarouselProps) {
+export default function HeroCarousel({ slides, autoPlayInterval = 5000, language = "ar" }: HeroCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isAutoPlaying, setIsAutoPlaying] = useState(true)
+
+  const isEnglish = language === "en"
+  const copy = {
+    empty: isEnglish ? "No images available" : "لا توجد صور متاحة",
+    defaultHeadline: isEnglish ? "AUGEN" : "أوغن",
+    defaultSlogan: isEnglish ? "Discover the latest luxury frames" : "اكتشف أحدث تشكيلة من الإطارات الفاخرة",
+    defaultCTA: isEnglish ? "Shop Now" : "تسوق الآن",
+    prev: isEnglish ? "Previous slide" : "الصورة السابقة",
+    next: isEnglish ? "Next slide" : "الصورة التالية",
+    dot: (index: number) => (isEnglish ? `Go to slide ${index}` : `الذهاب إلى الصورة ${index}`),
+  }
 
   const nextSlide = useCallback(() => {
     setCurrentIndex((prevIndex) => (prevIndex + 1) % slides.length)
@@ -59,7 +73,7 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
   if (slides.length === 0) {
     return (
       <section className="relative h-screen md:h-[500px] lg:h-screen flex items-center justify-center bg-secondary">
-        <p className="text-muted-foreground">لا توجد صور متاحة</p>
+        <p className="text-muted-foreground">{copy.empty}</p>
       </section>
     )
   }
@@ -69,9 +83,9 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
       {/* Slides */}
       <div className="relative w-full h-full">
         {slides.map((slide, index) => {
-          const headline = slide.headline || "AUGEN"
-          const slogan = slide.slogan || "اكتشف أحدث تشكيلة من الإطارات الفاخرة"
-          const ctaLabel = slide.cta_label || "Shop Now"
+          const headline = slide.headline || copy.defaultHeadline
+          const slogan = slide.slogan || copy.defaultSlogan
+          const ctaLabel = slide.cta_label || copy.defaultCTA
           const ctaLink = slide.cta_link || "/categories"
 
           return (
@@ -134,7 +148,7 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
               handleUserInteraction()
               prevSlide()
             }}
-            aria-label="الصورة السابقة"
+            aria-label={copy.prev}
           >
             <ChevronLeft className="w-6 h-6" />
           </Button>
@@ -146,7 +160,7 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
               handleUserInteraction()
               nextSlide()
             }}
-            aria-label="الصورة التالية"
+            aria-label={copy.next}
           >
             <ChevronRight className="w-6 h-6" />
           </Button>
@@ -166,7 +180,7 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000 }: HeroCa
               className={`w-2 h-2 rounded-full transition-all duration-300 ${
                 index === currentIndex ? "bg-white w-8" : "bg-white/50 hover:bg-white/75"
               }`}
-              aria-label={`الذهاب إلى الصورة ${index + 1}`}
+              aria-label={copy.dot(index + 1)}
             />
           ))}
         </div>

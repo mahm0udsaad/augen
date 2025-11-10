@@ -3,9 +3,23 @@
 import type React from "react"
 
 import { useState } from "react"
-import Header from "@/components/header"
-import Footer from "@/components/footer"
+import { Facebook, Instagram, Share2 } from "lucide-react"
+
 import ContactBottomSheet from "@/components/contact-bottom-sheet"
+import Footer from "@/components/footer"
+import Header from "@/components/header"
+import { WhatsAppIcon } from "@/components/icons/whatsapp-icon"
+import { SOCIAL_LINKS, type SocialPlatform } from "@/lib/social-links"
+
+const SOCIAL_ICON_MAP: Record<SocialPlatform, React.ComponentType<{ className?: string }>> = {
+  facebook: Facebook,
+  instagram: Instagram,
+  whatsapp: WhatsAppIcon,
+}
+
+const whatsappLink =
+  SOCIAL_LINKS.find((link) => link.id === "whatsapp")?.href ??
+  "https://wa.me/201035212724?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%20%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D9%85%D8%B2%D9%8A%D8%AF%20%D8%B9%D9%86%20%D8%AA%D8%B4%D9%83%D9%8A%D9%84%D8%A9%20%D8%A3%D9%88%D8%BA%D9%86%20%D9%85%D9%86%20%D8%A7%D9%84%D9%86%D8%B8%D8%A7%D8%B1%D8%A7%D8%AA"
 
 export default function ContactPage() {
   const [formData, setFormData] = useState({
@@ -218,20 +232,47 @@ export default function ContactPage() {
               <div className="bg-secondary/50 rounded-lg p-6 sm:p-8 border border-border hover:shadow-md transition-smooth">
                 <div className="flex items-start gap-4">
                   <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
-                    <svg className="w-5 h-5 text-accent" fill="currentColor" viewBox="0 0 24 24">
-                      <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.272-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.67-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.076 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421-7.403h-.004a9.87 9.87 0 00-4.255.949c-1.238.503-2.335 1.236-3.356 2.259-1.02 1.02-1.756 2.117-2.259 3.355-.603 1.692-.757 3.545-.757 5.471 0 .981.119 1.558.141 1.561l.003.002c.142 2.476.645 3.582 1.324 4.104.779.584 2.065.89 3.255.89.529 0 1.01-.044 1.27-.063 4.649-.469 8.386-3.285 10.172-7.213 1.786-3.922 1.786-8.342 0-12.264-1.786-3.928-5.523-6.744-10.172-7.213-.26-.019-.741-.063-1.27-.063z" />
-                    </svg>
+                    <WhatsAppIcon className="w-5 h-5 text-accent" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-foreground mb-2">واتساب</h3>
                     <a
-                      href="https://wa.me/201035212724?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D9%8B%20%D8%A3%D8%B1%D9%8A%D8%AF%20%D8%A7%D9%84%D9%85%D8%B2%D9%8A%D8%AF%20%D8%B9%D9%86%20%D8%AA%D8%B4%D9%83%D9%8A%D9%84%D8%A9%20%D8%A3%D9%88%D8%BA%D9%86%20%D9%85%D9%86%20%D8%A7%D9%84%D9%86%D8%B8%D8%A7%D8%B1%D8%A7%D8%AA"
+                      href={whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 active:bg-green-700 transition-smooth font-semibold text-sm min-h-[44px]"
                     >
                       راسلنا الآن
                     </a>
+                  </div>
+                </div>
+              </div>
+
+              <div className="bg-secondary/50 rounded-lg p-6 sm:p-8 border border-border hover:shadow-md transition-smooth">
+                <div className="flex items-start gap-4">
+                  <div className="w-10 h-10 bg-accent/20 rounded-full flex items-center justify-center flex-shrink-0">
+                    <Share2 className="h-5 w-5 text-accent" />
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-foreground mb-2">تابعنا</h3>
+                    <p className="text-sm text-muted-foreground mb-4">آخر الإصدارات والمجموعات عبر المنصات التالية</p>
+                    <div className="flex flex-wrap items-center gap-3">
+                      {SOCIAL_LINKS.map((link) => {
+                        const Icon = SOCIAL_ICON_MAP[link.id]
+                        return (
+                          <a
+                            key={link.id}
+                            href={link.href}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-foreground hover:text-background"
+                          >
+                            <span className="sr-only">{link.label.ar}</span>
+                            <Icon className="h-5 w-5" />
+                          </a>
+                        )
+                      })}
+                    </div>
                   </div>
                 </div>
               </div>

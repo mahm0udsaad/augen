@@ -17,6 +17,7 @@ interface UploadFieldProps extends Omit<React.InputHTMLAttributes<HTMLInputEleme
   status?: React.ReactNode
   onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void
   onFileSelect?: (file: File | null, event: React.ChangeEvent<HTMLInputElement>) => void
+  onFilesSelect?: (files: File[], event: React.ChangeEvent<HTMLInputElement>) => void
   className?: string
 }
 
@@ -33,6 +34,7 @@ export function UploadField({
   id,
   onChange,
   onFileSelect,
+  onFilesSelect,
   className,
   ...rest
 }: UploadFieldProps) {
@@ -42,9 +44,26 @@ export function UploadField({
   const [fileName, setFileName] = React.useState<string | undefined>(undefined)
 
   const handleSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0] ?? null
-    setFileName(file?.name)
-    onFileSelect?.(file, event)
+    const filesList = event.target.files
+    const isMultiple = event.target.multiple === true
+
+    if (filesList && (isMultiple || filesList.length > 1)) {
+      const files = Array.from(filesList)
+      // For multiple selection, prefer the plural callback if provided; otherwise call single callback for each
+      if (onFilesSelect) {
+        onFilesSelect(files, event)
+      } else if (onFileSelect) {
+        for (const f of files) {
+          onFileSelect(f, event)
+        }
+      }
+      // Optionally show first file name; helper/status can show counts elsewhere
+      setFileName(files[0]?.name)
+    } else {
+      const file = filesList?.[0] ?? null
+      setFileName(file?.name)
+      onFileSelect?.(file, event)
+    }
     onChange?.(event)
 
     // reset value so the same file can be re-selected

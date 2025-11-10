@@ -2,9 +2,8 @@ import type React from "react"
 import type { Metadata } from "next"
 import "./globals.css"
 import BottomNav from "@/components/bottom-nav"
-import { CartProvider } from "@/lib/cart-context"
-import { FavoritesProvider } from "@/lib/favorites-context"
 import { Toaster } from "@/components/ui/sonner"
+import { Providers } from "@/components/providers"
 
 export const metadata: Metadata = {
   title: "أوغن – تشكيلة نظارات فاخرة",
@@ -71,13 +70,11 @@ export default function RootLayout({
   return (
     <html lang="ar" dir="rtl">
       <body className={`font-sans antialiased`}>
-        <FavoritesProvider>
-          <CartProvider>
-            {children}
-            <BottomNav />
-            <Toaster position="top-center" richColors />
-          </CartProvider>
-        </FavoritesProvider>
+        <Providers>
+          {children}
+          <BottomNav />
+          <Toaster position="top-center" richColors />
+        </Providers>
       </body>
     </html>
   )

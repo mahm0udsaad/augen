@@ -2,112 +2,62 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { getAllProducts } from "@/lib/product-service"
-import type { Product } from "@/lib/products"
-import ProductCard from "@/components/product-card"
-import Header from "@/components/header"
+import { Filter, Layers, Loader2, RefreshCw, Sparkles } from "lucide-react"
+
 import Footer from "@/components/footer"
+import Header from "@/components/header"
+import ProductCard from "@/components/product-card"
 import {
-  Loader2,
-  Layers,
-  Glasses,
-  Sun,
-  Sparkles,
-  Circle,
-  Square,
-  Eye,
-  Star,
-  Heart,
-  Zap,
-  Crown,
-  Shield,
-  Award,
-  Target,
-  Package,
-  ShoppingBag,
-  Tag,
-  Gem,
-  Shirt,
-  Watch,
-  Briefcase,
-} from "lucide-react"
+  createCategoryShowcase,
+  createSubcategoryShowcase,
+} from "@/lib/category-visuals"
+import type {
+  CategoryShowcaseCard,
+  CategoryVisualOverride,
+  SubcategoryShowcaseCard,
+  SubcategoryVisualOverride,
+} from "@/lib/category-visuals"
+import { getAllProducts } from "@/lib/product-service"
+import { PARENT_SUBCATEGORY_MAP } from "@/lib/constants"
+import type { ParentCategory, Subcategory } from "@/lib/constants"
+import type { Product } from "@/lib/products"
 
-interface Subcategory {
-  id: string
-  name: string
-  name_ar: string | null
-  description: string | null
-  description_ar: string | null
-  icon: string | null
-  color: string | null
-  category_id: string
+const designerNotes = [
+  "عدسات DiDigital تقلل إجهاد الشاشة بنسبة 35%",
+  "طلاء مقاوم للخدوش مع ضمان لمدة عامين",
+  "ضبط مجاني للمقاس لكل عملية شراء",
+]
+
+interface CategoriesPageClientProps {
+  categoryOverrides: Partial<Record<ParentCategory, CategoryVisualOverride>>
+  subcategoryOverrides: Partial<Record<Subcategory, SubcategoryVisualOverride>>
 }
 
-interface SubcategoryWithParent extends Subcategory {
-  parentName: string
-  parentNameAr: string | null
-}
-
-interface Category {
-  id: string
-  name: string
-  name_ar: string | null
-  description: string | null
-  description_ar: string | null
-  icon: string | null
-  color: string | null
-  subcategories?: Subcategory[] | null
-}
-
-const iconMap: Record<string, any> = {
-  glasses: Glasses,
-  sun: Sun,
-  sparkles: Sparkles,
-  circle: Circle,
-  square: Square,
-  eye: Eye,
-  star: Star,
-  heart: Heart,
-  zap: Zap,
-  crown: Crown,
-  shield: Shield,
-  award: Award,
-  target: Target,
-  package: Package,
-  "shopping-bag": ShoppingBag,
-  tag: Tag,
-  gem: Gem,
-  shirt: Shirt,
-  watch: Watch,
-  briefcase: Briefcase,
-}
-
-const getIcon = (iconName: string | null) => {
-  if (!iconName) return Glasses
-  return iconMap[iconName] || Glasses
-}
-
-export default function CategoriesPageClient() {
+export default function CategoriesPageClient({
+  categoryOverrides,
+  subcategoryOverrides,
+}: CategoriesPageClientProps) {
   const [products, setProducts] = useState<Product[]>([])
-  const [categories, setCategories] = useState<Category[]>([])
   const [loading, setLoading] = useState(true)
   const router = useRouter()
   const searchParams = useSearchParams()
 
+  const categoryShowcase = useMemo(
+    () => createCategoryShowcase(categoryOverrides),
+    [categoryOverrides]
+  )
+
+  const subcategoryShowcase = useMemo(
+    () => createSubcategoryShowcase(subcategoryOverrides),
+    [subcategoryOverrides]
+  )
+
   useEffect(() => {
-    const loadStoreData = async () => {
+    const loadProducts = async () => {
       try {
         setLoading(true)
-        const [productData, categoriesResponse] = await Promise.all([
-          getAllProducts(),
-          fetch('/api/admin/categories').then(async (res) => {
-            if (!res.ok) throw new Error('فشل في تحميل الفئات')
-            return res.json()
-          })
-        ])
-
+        const productData = await getAllProducts()
         setProducts(productData)
-        setCategories(categoriesResponse)
       } catch (error) {
         console.error("حدث خطأ أثناء تحميل بيانات المتجر:", error)
       } finally {
@@ -115,99 +65,97 @@ export default function CategoriesPageClient() {
       }
     }
 
-    loadStoreData()
+    loadProducts()
   }, [])
 
-  const categoryFilter = searchParams.get("categoryId")
-  const subcategoryFilter = searchParams.get("subcategoryId")
+  const categoryMap = useMemo(
+    () => categoryShowcase.reduce((acc, category) => {
+      acc[category.id] = category
+      return acc
+    }, {} as Record<ParentCategory, CategoryShowcaseCard>),
+    [categoryShowcase]
+  )
 
-  const allSubcategories: SubcategoryWithParent[] = useMemo(() => (
-    categories.flatMap((category) =>
-      (category.subcategories || []).map((subcategory) => ({
-        ...subcategory,
-        parentName: category.name,
-        parentNameAr: category.name_ar,
-      }))
-    )
-  ), [categories])
+  const subcategoryMap = useMemo(
+    () => subcategoryShowcase.reduce((acc, subcategory) => {
+      acc[subcategory.id] = subcategory
+      return acc
+    }, {} as Record<Subcategory, SubcategoryShowcaseCard>),
+    [subcategoryShowcase]
+  )
 
-  const selectedCategory = categoryFilter
-    ? categories.find((category) => category.id === categoryFilter)
-    : null
-
-  const selectedSubcategory = subcategoryFilter
-    ? allSubcategories.find((subcategory) => subcategory.id === subcategoryFilter)
-    : null
+  const parentFilter = (searchParams.get("parent") as ParentCategory | null) ?? null
+  const subFilter = (searchParams.get("sub") as Subcategory | null) ?? null
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      if (subcategoryFilter) {
-        return product.subcategory_id === subcategoryFilter
+      if (subFilter) {
+        return product.subcategory === subFilter
       }
-      if (categoryFilter) {
-        if (product.category_id) {
-          return product.category_id === categoryFilter
-        }
-        const matchedCategory = categories.find((category) => category.id === categoryFilter)
-        if (!matchedCategory) return false
-        return (
-          (product.category || "").toLowerCase() === (matchedCategory.name || "").toLowerCase()
-        )
+      if (parentFilter) {
+        return product.parent_category === parentFilter
       }
       return true
     })
-  }, [products, subcategoryFilter, categoryFilter, categories])
+  }, [products, subFilter, parentFilter])
 
-  const activeFilterLabel = selectedSubcategory
-    ? selectedSubcategory.name_ar || selectedSubcategory.name
-    : selectedCategory
-      ? selectedCategory.name_ar || selectedCategory.name
-      : null
+  const activeCategory = parentFilter ? categoryMap[parentFilter] : undefined
+  const activeSubcategory = subFilter ? subcategoryMap[subFilter] : undefined
+  const fallbackParent = (categoryShowcase[0]?.id ?? "sunglasses") as ParentCategory
+  const currentParent = parentFilter ?? fallbackParent
+  const fallbackParentTitle = categoryMap[fallbackParent]?.title || ""
+  const subcategoriesForParent = (parent: ParentCategory) =>
+    (PARENT_SUBCATEGORY_MAP[parent] || []).map((id) => subcategoryMap[id]).filter(Boolean) as SubcategoryShowcaseCard[]
+
+  const activeFilterLabel = activeSubcategory?.title || activeCategory?.title || null
+  const heroBackgroundImage = activeCategory?.backgroundImage || "/images/hero-glasses.jpg"
+  const heroOverlay = activeCategory?.overlayGradient || "linear-gradient(135deg, rgba(0,0,0,0.9), rgba(30,30,30,0.7))"
+  const heroTexture = activeCategory?.texture || "bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.1),_transparent_55%)]"
 
   const navigateWithParams = (params: URLSearchParams) => {
     const query = params.toString()
-    router.push(query ? `/categories?${query}` : '/categories', { scroll: false })
+    router.push(query ? `/categories?${query}` : "/categories", { scroll: false })
   }
 
-  const handleCategoryClick = (categoryId: string) => {
+  const handleCategoryClick = (categoryId: ParentCategory) => {
     const params = new URLSearchParams(searchParams.toString())
-    const isActive = params.get('categoryId') === categoryId
+    const isActive = params.get("parent") === categoryId
 
     if (isActive) {
-      params.delete('categoryId')
-      params.delete('subcategoryId')
+      params.delete("parent")
+      params.delete("sub")
     } else {
-      params.set('categoryId', categoryId)
-      params.delete('subcategoryId')
+      params.set("parent", categoryId)
+      params.delete("sub")
     }
 
     navigateWithParams(params)
   }
 
-  const handleSubcategoryClick = (subcategory: Subcategory) => {
+  const handleSubcategoryClick = (subcategoryId: Subcategory, parentId: ParentCategory) => {
     const params = new URLSearchParams(searchParams.toString())
-    const isActive = params.get('subcategoryId') === subcategory.id
+    const isActive = params.get("sub") === subcategoryId
 
     if (isActive) {
-      params.delete('subcategoryId')
+      params.delete("sub")
     } else {
-      params.set('subcategoryId', subcategory.id)
-      params.set('categoryId', subcategory.category_id)
+      params.set("sub", subcategoryId)
+      params.set("parent", parentId)
     }
 
     navigateWithParams(params)
   }
 
   const clearFilters = () => {
-    router.push('/categories', { scroll: false })
+    router.push("/categories", { scroll: false })
   }
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background">
+      <main className="min-h-screen bg-background" dir="rtl">
         <Header />
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <Loader2 className="w-8 h-8 animate-spin" />
+        <div className="flex min-h-[60vh] items-center justify-center">
+          <Loader2 className="h-8 w-8 animate-spin" />
         </div>
         <Footer />
       </main>
@@ -215,122 +163,140 @@ export default function CategoriesPageClient() {
   }
 
   return (
-    <main className="min-h-screen bg-background py-6 md:py-10" dir="rtl">
+    <main className="min-h-screen bg-slate-50" dir="rtl">
       <Header />
 
-      <section className="px-4 py-6 md:py-10 bg-secondary/40">
-        <div className="max-w-6xl mx-auto flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-3xl md:text-4xl font-bold text-foreground mb-2">
-              متجر Augen
-            </h1>
-            <p className="text-base text-muted-foreground max-w-2xl">
-              {activeFilterLabel
-                ? `يتم عرض المنتجات ضمن فئة "${activeFilterLabel}"`
-                : "استكشف جميع منتجاتنا واختر الإطار المثالي لأسلوبك"}
-            </p>
-            <p className="text-sm text-muted-foreground mt-2">
-              {filteredProducts.length} منتج متاح
-            </p>
+      <section className="px-4 py-10 md:py-12">
+        <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/10 text-white shadow-2xl">
+          <div className="absolute inset-0">
+            <div
+              className="h-full w-full bg-cover bg-center"
+              style={{ backgroundImage: `url(${heroBackgroundImage})` }}
+            />
           </div>
-
-          {(categoryFilter || subcategoryFilter) && (
-            <button
-              onClick={clearFilters}
-              className="self-start md:self-auto text-sm font-semibold text-primary border border-primary px-4 py-2 rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
-            >
-              إعادة تعيين التصفية
-            </button>
-          )}
+          <div className="absolute inset-0" style={{ background: heroOverlay }} />
+          <div className={`relative flex flex-col gap-8 p-8 lg:flex-row lg:items-center ${heroTexture}`}>
+            <div className="flex-1 space-y-4">
+              <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-white/80">
+                <Sparkles className="h-3.5 w-3.5" />
+                {activeFilterLabel ? `نستعرض الآن: ${activeFilterLabel}` : "اكتشف تشكيلة Augen"}
+              </div>
+              <h1 className="text-4xl font-black leading-tight text-white md:text-5xl">
+                {activeCategory ? activeCategory.title : "متجر Augen"}
+              </h1>
+              <p className="text-lg text-white/80 md:text-xl">
+                {activeCategory?.spotlight || "اختر الفئة التي تناسب أسلوبك واستمتع بعدسات عالية الجودة وخدمة شخصية."}
+              </p>
+            </div>
+            <div className="flex w-full flex-col gap-4 rounded-3xl border border-white/20 bg-white/10 p-6 text-white/90 lg:max-w-sm">
+              {(parentFilter || subFilter) && (
+                <button
+                  onClick={clearFilters}
+                  className="mt-2 inline-flex items-center justify-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  إعادة تعيين الاختيار
+                </button>
+              )}
+            </div>
+          </div>
         </div>
       </section>
 
-      <section className="px-4 py-8 md:py-12">
-        <div className="max-w-6xl mx-auto space-y-10">
-          <div>
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-2xl font-bold">كل التصنيفات</h2>
-              <span className="text-sm text-muted-foreground">
-                استعرض الفئات الرئيسية والفرعية واختَر ما يناسبك
-              </span>
+      <section className="px-4 pb-6">
+        <div className="mx-auto flex max-w-6xl flex-col gap-4 rounded-3xl border border-slate-200 bg-white/80 p-4 shadow-sm backdrop-blur">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
+              <Filter className="h-3.5 w-3.5" />
+              مصفاة التصنيفات
             </div>
+            <p className="text-sm text-slate-600">
+              حدد الفئة المناسبة أو جرّب المزج بين الفئات الفرعية لتحصل على توصيات أدق.
+            </p>
+          </div>
+        </div>
+      </section>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {categories.map((category) => {
-                const IconComponent = getIcon(category.icon)
-                const isActive = categoryFilter === category.id
-                const bgColor = category.color || '#3b82f6'
-
-                return (
-                  <button
-                    key={category.id}
-                    onClick={() => handleCategoryClick(category.id)}
-                    className={`relative overflow-hidden rounded-2xl p-5 text-left text-white shadow-lg transition-transform duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-white ${isActive ? 'ring-2 ring-white ring-offset-2' : ''}`}
-                    style={{
-                      background: `linear-gradient(135deg, ${bgColor}ee 0%, ${bgColor} 100%)`
-                    }}
-                    aria-pressed={isActive}
-                  >
-                    <div className="absolute inset-0 bg-white/10" />
-                    <div className="relative flex flex-col gap-3">
-                      <div className="w-12 h-12 rounded-2xl bg-white/20 flex items-center justify-center">
-                        <IconComponent className="w-7 h-7" />
-                      </div>
+      <section className="px-4 pb-10 md:pb-16">
+        <div className="mx-auto flex max-w-6xl flex-col gap-10">
+          <div className="grid gap-4 md:grid-cols-2">
+            {categoryShowcase.map((category) => {
+              const isActive = parentFilter === category.id
+              return (
+                <button
+                  key={category.id}
+                  onClick={() => handleCategoryClick(category.id)}
+                  className={`relative overflow-hidden rounded-3xl border text-right transition duration-300 ${
+                    isActive
+                      ? "border-black/70 shadow-2xl"
+                      : "border-slate-200 hover:-translate-y-0.5 hover:shadow-lg"
+                  }`}
+                  aria-pressed={isActive}
+                >
+                  <div className="absolute inset-0">
+                    <div
+                      className="h-full w-full bg-cover bg-center"
+                      style={{ backgroundImage: `url(${category.backgroundImage})` }}
+                    />
+                  </div>
+                  <div className="absolute inset-0" style={{ background: category.overlayGradient }} />
+                  <div className={`relative space-y-4 p-6 text-white ${category.texture}`}>
+                    <div className="flex items-center justify-between gap-3">
                       <div>
-                        <h3 className="text-xl font-bold">
-                          {category.name_ar || category.name}
-                        </h3>
-                        <p className="text-sm text-white/90 line-clamp-2">
-                          {category.description_ar || category.description || 'مجموعة مميزة من النظارات'}
+                        <p className="text-xs font-semibold uppercase tracking-[0.4em] text-white/60">
+                          {category.badge}
                         </p>
+                        <h3 className="text-2xl font-bold">{category.title}</h3>
                       </div>
-                      {category.subcategories && category.subcategories.length > 0 && (
-                        <p className="text-xs text-white/80">
-                          {category.subcategories.length} فئات فرعية
-                        </p>
-                      )}
+                      <span className="text-sm font-semibold text-white/80">
+                        {category.tagline}
+                      </span>
                     </div>
-                  </button>
-                )
-              })}
+                    <p className="text-sm text-white/80">{category.description}</p>
+                  </div>
+                </button>
+              )
+            })}
+          </div>
 
-              {allSubcategories.map((subcategory) => {
-                const IconComponent = getIcon(subcategory.icon)
-                const isActive = subcategoryFilter === subcategory.id
-                const bgColor = subcategory.color || '#6366f1'
+          <div>
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold text-slate-600">
+                الفئات الفرعية ضمن {activeCategory?.title || fallbackParentTitle}
+              </p>
+              <span className="text-xs text-slate-500">يمكنك اختيار أكثر من نمط فرعي</span>
+            </div>
+            <div className="grid gap-4 md:grid-cols-3">
+              {subcategoriesForParent(currentParent).map((subcategory) => {
+                const isActive = subFilter === subcategory.id
 
                 return (
                   <button
                     key={subcategory.id}
-                    onClick={() => handleSubcategoryClick(subcategory)}
-                    className={`relative overflow-hidden rounded-2xl p-4 text-left text-white shadow-lg transition-transform duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:ring-offset-background focus-visible:ring-white ${isActive ? 'ring-2 ring-white ring-offset-2' : ''}`}
-                    style={{
-                      background: `linear-gradient(135deg, ${bgColor}dd 0%, ${bgColor} 100%)`
-                    }}
+                    onClick={() => handleSubcategoryClick(subcategory.id, currentParent)}
+                    className={`relative overflow-hidden rounded-2xl border text-right transition duration-300 ${
+                      isActive
+                        ? "border-black/70 shadow-xl"
+                        : "border-slate-200 hover:-translate-y-0.5 hover:border-slate-400"
+                    }`}
                     aria-pressed={isActive}
                   >
-                    <div className="absolute inset-0 bg-white/10" />
-                    <div className="relative flex flex-col gap-2">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-10 rounded-2xl bg-white/20 flex items-center justify-center">
-                          <IconComponent className="w-6 h-6" />
-                        </div>
-                        <div>
-                          <p className="text-sm text-white/80">
-                            {subcategory.parentNameAr || subcategory.parentName}
-                          </p>
-                          <h3 className="text-lg font-bold">
-                            {subcategory.name_ar || subcategory.name}
-                          </h3>
-                        </div>
+                    <div className="absolute inset-0">
+                      <div
+                        className="h-full w-full bg-cover bg-center"
+                        style={{ backgroundImage: `url(${subcategory.backgroundImage})` }}
+                      />
+                    </div>
+                    <div className="absolute inset-0" style={{ background: subcategory.overlayGradient }} />
+                    <div className={`relative space-y-3 p-5 text-white ${subcategory.pattern}`}>
+                      <div className="flex items-center justify-between">
+                        <h3 className="text-lg font-bold">{subcategory.title}</h3>
+                        <span className="text-xs font-semibold text-white/70">{subcategory.tagline}</span>
                       </div>
-                      {subcategory.description_ar || subcategory.description ? (
-                        <p className="text-xs text-white/80 line-clamp-2">
-                          {subcategory.description_ar || subcategory.description}
-                        </p>
-                      ) : (
-                        <p className="text-xs text-white/70">
-                          فئة فرعية ضمن {subcategory.parentNameAr || subcategory.parentName}
+                      <p className="text-sm text-white/80">{subcategory.description}</p>
+                      {isActive && (
+                        <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
+                          تم تفعيل الفئة الفرعية
                         </p>
                       )}
                     </div>
@@ -340,34 +306,38 @@ export default function CategoriesPageClient() {
             </div>
           </div>
 
-          <div>
-            <div className="flex items-center justify-between mb-6">
+          <div className="space-y-4">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-2xl font-bold">المنتجات</h2>
-                <p className="text-sm text-muted-foreground">
-                  {filteredProducts.length} منتج
+                <h2 className="text-2xl font-bold text-slate-900">المنتجات</h2>
+                <p className="text-sm text-slate-500">
+                  {activeFilterLabel ? `نعرض الآن منتجات ضمن "${activeFilterLabel}"` : "جميع منتجاتنا المتاحة حالياً"}
                 </p>
               </div>
+              {(parentFilter || subFilter) && (
+                <button
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white"
+                >
+                  إعادة التصفية
+                </button>
+              )}
             </div>
 
             {filteredProducts.length === 0 ? (
-              <div className="border border-dashed border-border rounded-3xl py-16 flex flex-col items-center justify-center text-center gap-4">
-                <Layers className="w-12 h-12 text-muted-foreground" />
-                <div>
-                  <p className="text-lg font-semibold">لا توجد منتجات مطابقة</p>
-                  <p className="text-sm text-muted-foreground mt-1">
-                    حاول تغيير الفئة أو إعادة تعيين التصفية لعرض جميع المنتجات
-                  </p>
-                </div>
+              <div className="flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300 py-16 text-center">
+                <Layers className="h-12 w-12 text-slate-400" />
+                <p className="mt-4 text-lg font-semibold text-slate-900">لا توجد منتجات مطابقة</p>
+                <p className="text-sm text-slate-500">جرب تغيير الفئة أو قم بإعادة التصفية لعرض جميع المنتجات.</p>
                 <button
                   onClick={clearFilters}
-                  className="text-sm font-semibold text-primary border border-primary px-4 py-2 rounded-full hover:bg-primary hover:text-primary-foreground transition-colors"
+                  className="mt-6 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white"
                 >
                   عرض كل المنتجات
                 </button>
               </div>
             ) : (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                 {filteredProducts.map((product, index) => (
                   <div key={product.id} className="animate-slide-up" style={{ animationDelay: `${index * 50}ms` }}>
                     <ProductCard product={product} />
@@ -376,7 +346,7 @@ export default function CategoriesPageClient() {
               </div>
             )}
           </div>
-        </div>
+          </div>
       </section>
 
       <Footer />

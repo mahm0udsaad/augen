@@ -10,7 +10,13 @@ export async function GET() {
 
     if (error) throw error
 
-    return NextResponse.json(data || [])
+    return new NextResponse(JSON.stringify(data || []), {
+      status: 200,
+      headers: {
+        "Content-Type": "application/json",
+        "Cache-Control": "no-store, max-age=0",
+      },
+    })
   } catch (error) {
     console.error("Error fetching category displays:", error)
     return NextResponse.json({ error: "فشل في جلب البيانات" }, { status: 500 })

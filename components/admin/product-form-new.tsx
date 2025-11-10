@@ -258,6 +258,7 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
         <UploadField
           label="صور المنتج مع الألوان *"
           accept="image/*"
+          multiple
           icon={<Plus className="w-4 h-4" />}
           buttonText="إضافة صورة"
           placeholder="PNG أو JPG بدقة عالية"
@@ -268,6 +269,21 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
               : "يمكنك إضافة أكثر من صورة لكل لون"
           }
           onFileSelect={(file) => file && handleImageUpload(file)}
+          onFilesSelect={(files) => {
+            if (!files || files.length === 0) return
+            ;(async () => {
+              try {
+                // coarse-grained uploading indicator for batch
+                // inner calls also toggle uploading; this ensures the button stays disabled for the whole batch
+                setUploading(true)
+                for (const f of files) {
+                  await handleImageUpload(f)
+                }
+              } finally {
+                setUploading(false)
+              }
+            })()
+          }}
         />
 
         <div className="grid grid-cols-1 gap-4">

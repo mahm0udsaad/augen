@@ -1,5 +1,3 @@
-import Link from "next/link"
-import Image from "next/image"
 import { getAllProducts } from "@/lib/product-service"
 import ProductCard from "@/components/product-card"
 import Header from "@/components/header"
@@ -10,12 +8,12 @@ import { supabase } from "@/lib/supabase"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
-  title: "أوغن – تشكيلة النظارات الفاخرة | الصفحة الرئيسية",
+  title: "Augen – Luxury Eyewear Collections | Home",
   description:
-    "استكشف التشكيلة المختارة من نظارات أوغن المصممة يدويًا لكل أسلوب ومناسبة. تواصل معنا على ‎+2010 35212724.",
+    "Explore Augen's hand-finished eyewear curated for every style. Connect with our concierge team at ‎+2010 35212724.",
   openGraph: {
-    title: "أوغن – تشكيلة النظارات الفاخرة",
-    description: "تعرّف على أفضل إطارات النظارات المصممة بعناية من أوغن.",
+    title: "Augen – Luxury Eyewear Collections",
+    description: "Discover meticulously crafted frames that elevate your daily look.",
     images: [
       {
         url: "/images/hero.png",
@@ -28,11 +26,13 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "أوغن – تشكيلة النظارات الفاخرة",
-    description: "تعرّف على أفضل إطارات النظارات المصممة بعناية من أوغن.",
+    title: "Augen – Luxury Eyewear Collections",
+    description: "Discover meticulously crafted frames that elevate your daily look.",
     images: ["/images/hero.png"],
   },
 }
+
+export const revalidate = 0
 
 export default async function Home() {
   const products = await getAllProducts()
@@ -59,11 +59,11 @@ export default async function Home() {
     .order("sort_order", { ascending: true })
 
   return (
-    <main className="min-h-screen bg-background">
-      <Header />
+    <main className="min-h-screen bg-background" dir="ltr">
+      <Header language="en" />
 
       {/* Hero Carousel */}
-      <HeroCarousel slides={slides || []} />
+      <HeroCarousel slides={slides || []} language="en" />
 
       {/* Dynamic Category Sections */}
       <section className="px-4 py-12 sm:py-16 md:py-24 bg-gray-50">
@@ -71,6 +71,7 @@ export default async function Home() {
           <CategoriesSection
             initialDisplays={categoryDisplays || []}
             subcategoryDisplays={subcategoryDisplays || []}
+            language="en"
           />
         </div>
       </section>
@@ -79,10 +80,10 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-6 md:mb-12 animate-slide-up">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2 text-center">
-              تشكيلتنا المختارة
+              Our Curated Selection
             </h2>
             <p className="text-center text-muted-foreground text-xs sm:text-base">
-              إطارات مصممة يدويًا لكل أسلوب ومناسبة
+              Hand-finished frames designed for every face and every occasion
             </p>
           </div>
 
@@ -100,10 +101,10 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-6 md:mb-12 text-center animate-slide-up">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-              آراء عملائنا
+              Client Stories
             </h2>
             <p className="text-muted-foreground text-xs sm:text-base">
-              انضم إلى آلاف العملاء الراضين حول العالم
+              Join thousands of eyewear lovers who trust Augen worldwide
             </p>
           </div>
 
@@ -111,20 +112,20 @@ export default async function Home() {
             {[
               {
                 name: "Sarah Mitchell",
-                role: "شغوفة بالموضة",
-                text: "ميزة تجربة الذكاء الاصطناعي مذهلة! وجدت الإطار المثالي دون مغادرة المنزل. الجودة تفوق التوقعات.",
+                role: "Fashion Editor",
+                text: "The AI try-on is brilliant—I found the perfect frame without leaving home. Craftsmanship exceeds expectations.",
                 rating: 5,
               },
               {
                 name: "James Chen",
-                role: "محترف أعمال",
-                text: "أوغن تقدم جودة فاخرة بأسعار عادلة. فريق الواتساب سريع ومتعاون للغاية.",
+                role: "Business Strategist",
+                text: "Augen blends couture-grade quality with fair pricing. The WhatsApp concierge is fast and genuinely helpful.",
                 rating: 5,
               },
               {
                 name: "Emma Rodriguez",
-                role: "مدونة أزياء",
-                text: "هذه النظارات مدهشة! الحِرَفية واضحة في كل تفصيلة. أنصح بها كل من يبحث عن نظارات فاخرة.",
+                role: "Style Content Creator",
+                text: "These frames are a statement. Every detail feels bespoke. I recommend Augen to all of my clients.",
                 rating: 5,
               },
             ].map((testimonial, index) => (
@@ -155,10 +156,10 @@ export default async function Home() {
         <div className="max-w-6xl mx-auto">
           <div className="mb-6 md:mb-12 text-center animate-slide-up">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-2">
-              لماذا تختار أوغن؟
+              Why choose Augen?
             </h2>
             <p className="text-muted-foreground text-xs sm:text-base">
-              جودة فاخرة وتقنيات مبتكرة وخدمة استثنائية
+              Luxury materials, intelligent tools, and concierge-level care
             </p>
           </div>
 
@@ -185,9 +186,9 @@ export default async function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-base md:text-xl font-semibold text-foreground mb-1 md:mb-2">تجربة ذكية</h3>
+              <h3 className="text-base md:text-xl font-semibold text-foreground mb-1 md:mb-2">Smart try-on</h3>
               <p className="text-xs md:text-base text-muted-foreground">
-                شاهد كيف تبدو الإطارات عليك باستخدام تقنية الذكاء الاصطناعي المتقدمة
+                Preview every angle with our advanced AI fitting experience.
               </p>
             </div>
 
@@ -210,8 +211,8 @@ export default async function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-base md:text-xl font-semibold text-foreground mb-1 md:mb-2">جودة فاخرة</h3>
-              <p className="text-xs md:text-base text-muted-foreground">إطارات مصنوعة يدويًا من أجود المواد</p>
+              <h3 className="text-base md:text-xl font-semibold text-foreground mb-1 md:mb-2">Couture quality</h3>
+              <p className="text-xs md:text-base text-muted-foreground">Handcrafted frames in titanium, acetate, and precision alloys.</p>
             </div>
 
             <div
@@ -233,16 +234,16 @@ export default async function Home() {
                   />
                 </svg>
               </div>
-              <h3 className="text-base md:text-xl font-semibold text-foreground mb-1 md:mb-2">دعم متخصص</h3>
+              <h3 className="text-base md:text-xl font-semibold text-foreground mb-1 md:mb-2">Specialist care</h3>
               <p className="text-xs md:text-base text-muted-foreground">
-                دعم مباشر عبر الواتساب لمساعدتك بشكل شخصي
+                Direct WhatsApp support for sizing, styling, and aftercare.
               </p>
             </div>
           </div>
         </div>
       </section>
 
-      <Footer />
+      <Footer language="en" />
     </main>
   )
 }

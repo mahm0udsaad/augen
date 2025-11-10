@@ -25,6 +25,7 @@ interface CategoryDisplay {
   mobile_background_image: string | null
   is_visible: boolean
   sort_order: number
+  updated_at?: string
 }
 
 interface SubcategoryDisplay {
@@ -94,9 +95,11 @@ export default function CategoryDisplaysPage() {
       if (!response.ok) throw new Error("فشل في رفع الصورة")
 
       const data = await response.json()
+      // Add a client-side cache buster so preview updates immediately even if storage path is the same
+      const urlWithVersion = `${data.url}${data.url.includes("?") ? "&" : "?"}v=${Date.now()}`
       setFormData((prev) => ({
         ...prev,
-        [isMobile ? "mobile_background_image" : "background_image"]: data.url,
+        [isMobile ? "mobile_background_image" : "background_image"]: urlWithVersion,
       }))
 
       toast.success(isMobile ? "تم رفع صورة الموبايل" : "تم رفع الصورة")
@@ -168,7 +171,8 @@ export default function CategoryDisplaysPage() {
 
       const data = await response.json()
       await saveSubcategoryDisplay(parentKey, subKey, {
-        [isMobile ? "mobile_image_url" : "image_url"]: data.url,
+        // Add a client-side cache buster for immediate UI refresh
+        [isMobile ? "mobile_image_url" : "image_url"]: `${data.url}${data.url.includes("?") ? "&" : "?"}v=${Date.now()}`,
       })
 
       toast.success("تم تحديث صورة الفئة الفرعية")
@@ -199,11 +203,23 @@ export default function CategoryDisplaysPage() {
       return
     }
 
+    const payload = {
+      category_key: formData.category_key,
+      title_ar: formData.title_ar ?? "",
+      title_en: formData.title_en ?? null,
+      slogan_ar: formData.slogan_ar ?? null,
+      slogan_en: formData.slogan_en ?? null,
+      background_image: formData.background_image,
+      mobile_background_image: formData.mobile_background_image ?? null,
+      is_visible: formData.is_visible ?? true,
+      sort_order: formData.sort_order ?? 0,
+    }
+
     try {
       const response = await fetch(`/api/admin/category-displays/${editingId}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       })
 
       if (!response.ok) throw new Error("فشل في الحفظ")
@@ -221,6 +237,13 @@ export default function CategoryDisplaysPage() {
   const handleCancel = () => {
     setEditingId(null)
     setFormData({})
+  }
+
+  const versioned = (url: string, updatedAt?: string) => {
+    if (!updatedAt) return url
+    const v = String(new Date(updatedAt).getTime())
+    const sep = url.includes("?") ? "&" : "?"
+    return `${url}${sep}v=${encodeURIComponent(v)}`
   }
 
   if (isLoading || loading) {
@@ -431,7 +454,7 @@ export default function CategoryDisplaysPage() {
                   <>
                     <div
                       className="relative h-48 bg-cover bg-center"
-                      style={{ backgroundImage: `url(${display.background_image})` }}
+                      style={{ backgroundImage: `url(${versioned(display.background_image, display.updated_at)})` }}
                     >
                       <div className="absolute inset-0 bg-gradient-to-b from-black/30 to-black/60" />
                       <div className="absolute inset-0 flex flex-col justify-end p-6 text-white">

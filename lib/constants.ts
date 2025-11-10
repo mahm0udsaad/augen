@@ -46,6 +46,11 @@ export const SUBCATEGORIES = {
 export type ParentCategory = keyof typeof PARENT_CATEGORIES;
 export type Subcategory = keyof typeof SUBCATEGORIES;
 
+export const PARENT_SUBCATEGORY_MAP: Record<ParentCategory, Subcategory[]> = {
+  sunglasses: ["man", "woman"],
+  optical_glasses: ["man", "woman", "child"],
+}
+
 // Helper functions
 export function getParentCategoryName(id: ParentCategory, lang: 'ar' | 'en' = 'ar'): string {
   return lang === 'ar' ? PARENT_CATEGORIES[id].name_ar : PARENT_CATEGORIES[id].name_en;
@@ -62,4 +67,3 @@ export function getParentCategoryDescription(id: ParentCategory, lang: 'ar' | 'e
 export function getSubcategoryDescription(id: Subcategory, lang: 'ar' | 'en' = 'ar'): string {
   return lang === 'ar' ? SUBCATEGORIES[id].description_ar : SUBCATEGORIES[id].description_en;
 }
-
