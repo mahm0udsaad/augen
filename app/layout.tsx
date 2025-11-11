@@ -42,11 +42,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Augen – Luxury Eyewear Collections",
     description: "Discover meticulously crafted frames that elevate your daily look.",
-    images: ["/og.png"],
+    images: ["https://augen.vercel.app/og.png"],
   },
   robots: {
     index: true,
-    follow: true,
+    follow: true, // TODO: Change to false when we have a lot of pages
     googleBot: {
       index: true,
       follow: true,
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/images/icon.png",
+    apple: "https://augen.vercel.app/images/icon.png",
   },
 }
 
