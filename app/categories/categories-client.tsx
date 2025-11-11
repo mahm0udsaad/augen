@@ -23,9 +23,9 @@ import type { ParentCategory, Subcategory } from "@/lib/constants"
 import type { Product } from "@/lib/products"
 
 const designerNotes = [
-  "عدسات DiDigital تقلل إجهاد الشاشة بنسبة 35%",
-  "طلاء مقاوم للخدوش مع ضمان لمدة عامين",
-  "ضبط مجاني للمقاس لكل عملية شراء",
+  "DiDigital lenses reduce screen fatigue by 35%",
+  "Scratch-resistant coating with 2-year warranty",
+  "Free size adjustment with every purchase",
 ]
 
 interface CategoriesPageClientProps {
@@ -59,7 +59,7 @@ export default function CategoriesPageClient({
         const productData = await getAllProducts()
         setProducts(productData)
       } catch (error) {
-        console.error("حدث خطأ أثناء تحميل بيانات المتجر:", error)
+        console.error("Error loading store data:", error)
       } finally {
         setLoading(false)
       }
@@ -136,19 +136,19 @@ export default function CategoriesPageClient({
 
   if (loading) {
     return (
-      <main className="min-h-screen bg-background" dir="rtl">
-        <Header />
+      <main className="min-h-screen bg-background" dir="ltr">
+        <Header language="en" />
         <div className="flex min-h-[60vh] items-center justify-center">
           <Loader2 className="h-8 w-8 animate-spin" />
         </div>
-        <Footer />
+        <Footer language="en" />
       </main>
     )
   }
 
   return (
-    <main className="min-h-screen bg-slate-50" dir="rtl">
-      <Header />
+    <main className="min-h-screen bg-slate-50" dir="ltr">
+      <Header language="en" />
 
       <section className="px-4 py-10 md:py-12">
         <div className="relative mx-auto max-w-6xl overflow-hidden rounded-3xl border border-white/10 text-white shadow-2xl">
@@ -163,13 +163,13 @@ export default function CategoriesPageClient({
             <div className="flex-1 space-y-4">
               <div className="inline-flex items-center gap-2 rounded-full border border-white/30 bg-white/10 px-4 py-1 text-xs font-semibold uppercase tracking-widest text-white/80">
                 <Sparkles className="h-3.5 w-3.5" />
-                {activeFilterLabel ? `نستعرض الآن: ${activeFilterLabel}` : "اكتشف تشكيلة Augen"}
+                {activeFilterLabel ? `Browsing: ${activeFilterLabel}` : "Discover Augen Collection"}
               </div>
               <h1 className="text-4xl font-black leading-tight text-white md:text-5xl">
-                {activeCategory ? activeCategory.title : "متجر Augen"}
+                {activeCategory ? activeCategory.title : "Augen Store"}
               </h1>
               <p className="text-lg text-white/80 md:text-xl">
-                {activeCategory?.spotlight || "اختر الفئة التي تناسب أسلوبك واستمتع بعدسات عالية الجودة وخدمة شخصية."}
+                {activeCategory?.spotlight || "Choose the category that suits your style and enjoy high-quality lenses and personalized service."}
               </p>
             </div>
             <div className="flex w-full flex-col gap-4 rounded-3xl border border-white/20 bg-white/10 p-6 text-white/90 lg:max-w-sm">
@@ -179,7 +179,7 @@ export default function CategoriesPageClient({
                   className="mt-2 inline-flex items-center justify-center gap-2 rounded-full border border-white/40 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
                 >
                   <RefreshCw className="h-4 w-4" />
-                  إعادة تعيين الاختيار
+                  Reset Selection
                 </button>
               )}
             </div>
@@ -192,10 +192,10 @@ export default function CategoriesPageClient({
           <div className="flex flex-wrap items-center gap-3">
             <div className="inline-flex items-center gap-2 rounded-full bg-slate-900 px-3 py-1 text-xs font-semibold text-white">
               <Filter className="h-3.5 w-3.5" />
-              مصفاة التصنيفات
+              Category Filter
             </div>
             <p className="text-sm text-slate-600">
-              حدد الفئة المناسبة أو جرّب المزج بين الفئات الفرعية لتحصل على توصيات أدق.
+              Select the appropriate category or try mixing subcategories to get more accurate recommendations.
             </p>
           </div>
         </div>
@@ -210,7 +210,7 @@ export default function CategoriesPageClient({
                 <button
                   key={category.id}
                   onClick={() => handleCategoryClick(category.id)}
-                  className={`relative overflow-hidden rounded-3xl border text-right transition duration-300 ${
+                  className={`relative overflow-hidden rounded-3xl border text-left transition duration-300 ${
                     isActive
                       ? "border-black/70 shadow-2xl"
                       : "border-slate-200 hover:-translate-y-0.5 hover:shadow-lg"
@@ -246,9 +246,9 @@ export default function CategoriesPageClient({
           <div>
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold text-slate-600">
-                الفئات الفرعية ضمن {activeCategory?.title || fallbackParentTitle}
+                Subcategories under {activeCategory?.title || fallbackParentTitle}
               </p>
-              <span className="text-xs text-slate-500">يمكنك اختيار أكثر من نمط فرعي</span>
+              <span className="text-xs text-slate-500">You can select multiple subcategories</span>
             </div>
             <div className="grid gap-4 md:grid-cols-3">
               {subcategoriesForParent(currentParent).map((subcategory) => {
@@ -258,7 +258,7 @@ export default function CategoriesPageClient({
                   <button
                     key={subcategory.id}
                     onClick={() => handleSubcategoryClick(subcategory.id, currentParent)}
-                    className={`relative overflow-hidden rounded-2xl border text-right transition duration-300 ${
+                    className={`relative overflow-hidden rounded-2xl border text-left transition duration-300 ${
                       isActive
                         ? "border-black/70 shadow-xl"
                         : "border-slate-200 hover:-translate-y-0.5 hover:border-slate-400"
@@ -280,7 +280,7 @@ export default function CategoriesPageClient({
                       <p className="text-sm text-white/80">{subcategory.description}</p>
                       {isActive && (
                         <p className="text-xs font-semibold uppercase tracking-wide text-white/80">
-                          تم تفعيل الفئة الفرعية
+                          Subcategory Active
                         </p>
                       )}
                     </div>
@@ -291,23 +291,23 @@ export default function CategoriesPageClient({
           </div>
 
           <div className="space-y-6 text-center py-10">
-            <h2 className="text-2xl font-bold text-slate-900">اذهب إلى صفحة المنتجات</h2>
+            <h2 className="text-2xl font-bold text-slate-900">Go to Products Page</h2>
             <p className="text-sm text-slate-600">
-              اختر أي فئة أو فئة فرعية أعلاه للانتقال مباشرة إلى صفحة المنتجات المصفّاة.
+              Select any category or subcategory above to go directly to the filtered products page.
             </p>
             <div>
               <button
                 onClick={() => router.push("/products")}
                 className="inline-flex items-center gap-2 rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-900 hover:text-white"
               >
-                عرض كل المنتجات
+                View All Products
               </button>
             </div>
           </div>
           </div>
       </section>
 
-      <Footer />
+      <Footer language="en" />
     </main>
   )
 }

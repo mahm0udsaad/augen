@@ -95,16 +95,16 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   }
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(price)
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP" }).format(price)
 
   const handleSubmitOrder = async () => {
     if (!customerInfo.name || !customerInfo.whatsapp) {
-      toast.error("الرجاء إدخال الاسم ورقم الواتساب")
+      toast.error("Please enter your name and WhatsApp number")
       return
     }
     const whatsappRegex = /^[+]?[0-9]{10,15}$/
     if (!whatsappRegex.test(customerInfo.whatsapp.replace(/\s/g, ""))) {
-      toast.error("رقم الواتساب غير صحيح")
+      toast.error("Invalid WhatsApp number")
       return
     }
 
@@ -132,14 +132,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       })
       const data = await response.json()
       if (!response.ok) {
-        throw new Error(data.error || "فشل إنشاء الطلب")
+        throw new Error(data.error || "Failed to create order")
       }
       setOrderNumber(data.order.order_number)
       setIsOrderSubmitted(true)
-      toast.success("تم إنشاء الطلب بنجاح!")
+      toast.success("Order created successfully!")
     } catch (error: any) {
       console.error("Error submitting order:", error)
-      toast.error(error.message || "حدث خطأ أثناء إنشاء الطلب")
+      toast.error(error.message || "An error occurred while creating the order")
     } finally {
       setIsSubmitting(false)
     }
@@ -148,7 +148,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const relatedItems = []
 
   return (
-    <section className="px-0 py-0 md:px-2 md:py-6" dir="rtl">
+    <section className="px-0 py-0 md:px-2 md:py-6" dir="ltr">
       <div className="max-w-7xl mx-auto md:rounded-lg overflow-hidden">
         <div className="flex flex-col md:grid md:grid-cols-2 md:gap-12">
           {/* Product Media Carousel - Full screen height on mobile */}
@@ -185,18 +185,18 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               className={`space-y-3 md:space-y-4 ${isTransitioning ? "view-transition-slide-in view-transition-slide-in-delay-2" : ""}`}
             >
               <div className="flex items-baseline gap-2 justify-between">
-                <span className="text-3xl md:text-4xl font-bold text-foreground">{product.price} ج.م</span>
+                <span className="text-3xl md:text-4xl font-bold text-foreground">{product.price} EGP</span>
                 <div className="text-sm">
                   {availableQuantity > 0 ? (
-                    <span className="text-green-600 font-semibold">متوفر ({availableQuantity})</span>
+                    <span className="text-green-600 font-semibold">Available ({availableQuantity})</span>
                   ) : (
-                    <span className="text-red-600 font-semibold">غير متوفر</span>
+                    <span className="text-red-600 font-semibold">Out of Stock</span>
                   )}
                 </div>
               </div>
 
               <div className="space-y-2">
-                <p className="text-xs md:text-sm font-semibold text-foreground uppercase tracking-wide">المادة</p>
+                <p className="text-xs md:text-sm font-semibold text-foreground uppercase tracking-wide">Material</p>
                 <p className="text-muted-foreground text-sm md:text-base">{product.material}</p>
               </div>
 
@@ -204,7 +204,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               {product.colorOptions && product.colorOptions.length > 0 && (
                 <div className="space-y-3">
                   <p className="text-xs md:text-sm font-semibold text-foreground uppercase tracking-wide">
-                    الألوان المتاحة
+                    Available Colors
                   </p>
                   <div className="flex gap-3 flex-wrap">
                     {product.colorOptions.map((colorOption) => (
@@ -230,7 +230,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">اللون المختار: {selectedColor}</p>
+                  <p className="text-xs text-muted-foreground mt-2">Selected Color: {selectedColor}</p>
                 </div>
               )}
             </div>
@@ -241,7 +241,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             >
               {/* Quantity Selector */}
               {availableQuantity > 0 && (
-                <div className="flex items-center gap-3 justify-center mb-2" dir="rtl">
+                <div className="flex items-center gap-3 justify-center mb-2" dir="ltr">
                   <button
                     onClick={() => setQuantity(Math.max(1, quantity - 1))}
                     className="w-10 h-10 rounded-lg border-2 border-border hover:border-accent flex items-center justify-center transition-colors"
@@ -269,9 +269,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                     : "bg-accent text-accent-foreground hover:bg-accent/90 active:bg-accent/80"
                 }`}
-                aria-label="اطلب الآن"
+                aria-label="Order Now"
               >
-                اطلب الآن
+                Order Now
               </button>
 
               <button
@@ -286,16 +286,16 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 }`}
               >
                 {availableQuantity <= 0 ? (
-                  "غير متوفر"
+                  "Out of Stock"
                 ) : addedToCart ? (
                   <>
                     <Check className="w-5 h-5" />
-                    تمت الإضافة إلى السلة
+                    Added to Cart
                   </>
                 ) : (
                   <>
                     <ShoppingCart className="w-5 h-5" />
-                    أضف إلى السلة
+                    Add to Cart
                   </>
                 )}
               </button>
@@ -306,7 +306,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 aria-pressed={favoriteActive}
               >
                 <Heart className={`w-5 h-5 ${favoriteActive ? "fill-current" : ""}`} />
-                {favoriteActive ? "في المفضلة" : "أضف إلى المفضلة"}
+                {favoriteActive ? "In Favorites" : "Add to Favorites"}
               </button>
 
               <WhatsAppButton productName={product.name} />
@@ -318,15 +318,15 @@ export default function ProductDetail({ product }: ProductDetailProps) {
             >
               <div className="flex gap-3">
                 <span className="text-accent flex-shrink-0 text-lg">✓</span>
-                <span className="text-sm md:text-base text-muted-foreground">مواد فاخرة مصنعة يدويًا بعناية</span>
+                <span className="text-sm md:text-base text-muted-foreground">Luxury materials carefully handcrafted</span>
               </div>
               <div className="flex gap-3">
                 <span className="text-accent flex-shrink-0 text-lg">✓</span>
-                <span className="text-sm md:text-base text-muted-foreground">شحن مجاني للطلبات التي تتجاوز ٣٠٠٠ ج.م</span>
+                <span className="text-sm md:text-base text-muted-foreground">Free shipping on orders over 3,000 EGP</span>
               </div>
               <div className="flex gap-3">
                 <span className="text-accent flex-shrink-0 text-lg">✓</span>
-                <span className="text-sm md:text-base text-muted-foreground">ضمان استرجاع خلال ٣٠ يومًا</span>
+                <span className="text-sm md:text-base text-muted-foreground">30-day return guarantee</span>
               </div>
             </div>
           </div>
@@ -336,7 +336,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         {relatedItems.length > 0 && (
           <div className="mt-12 md:mt-24 border-t border-border pt-8 md:pt-12 px-4 md:px-0">
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-6 md:mb-8">
-              قد يعجبك أيضًا
+              You May Also Like
             </h2>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-6">
               {relatedItems.map((item) => (
@@ -353,7 +353,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   <h3 className="text-xs md:text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">
                     {item.name}
                   </h3>
-                  <p className="text-xs md:text-sm text-accent font-semibold mt-1">{item.price} ج.م</p>
+                  <p className="text-xs md:text-sm text-accent font-semibold mt-1">{item.price} EGP</p>
                 </Link>
               ))}
             </div>
@@ -361,7 +361,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         )}
 
         <div className="mt-12 md:mt-24 border-t border-border pt-8 md:pt-12 px-4 md:px-0">
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-6 md:mb-8">زر متجرنا</h2>
+          <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-6 md:mb-8">Visit Our Store</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8">
             <div className="rounded-lg overflow-hidden shadow-md h-80 md:h-96">
               <iframe
@@ -377,33 +377,33 @@ export default function ProductDetail({ product }: ProductDetailProps) {
 
             <div className="space-y-4 md:space-y-6">
               <div>
-                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">عنوان المتجر</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">Store Address</h3>
                 <p className="text-muted-foreground text-sm md:text-base leading-relaxed">
-                  متجر أوغن
+                  Augen Store
                   <br />
-                  ٤٤ خاتم المرسلين
+                  44 Khatem El-Morsaleen
                   <br />
-                  الجيزة – مصر
+                  Giza – Egypt
                 </p>
               </div>
 
               <div>
-                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">ساعات العمل</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">Business Hours</h3>
                 <div className="space-y-1 md:space-y-2 text-sm md:text-base text-muted-foreground">
-                  <p>الإثنين – الجمعة: 10:00 ص - 8:00 م</p>
-                  <p>السبت: 10:00 ص - 6:00 م</p>
-                  <p>الأحد: 12:00 م - 5:00 م</p>
+                  <p>Monday – Friday: 10:00 AM - 8:00 PM</p>
+                  <p>Saturday: 10:00 AM - 6:00 PM</p>
+                  <p>Sunday: 12:00 PM - 5:00 PM</p>
                 </div>
               </div>
 
               <div>
-                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">معلومات التواصل</h3>
+                <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">Contact Information</h3>
                 <div className="space-y-1 md:space-y-2 text-sm md:text-base text-muted-foreground">
                   <p>
-                    الهاتف: <span className="text-accent font-semibold">+2010 35212724</span>
+                    Phone: <span className="text-accent font-semibold">+2010 35212724</span>
                   </p>
                   <p>
-                    البريد الإلكتروني: <span className="text-accent font-semibold">support@luxeoptics.com</span>
+                    Email: <span className="text-accent font-semibold">support@luxeoptics.com</span>
                   </p>
                 </div>
               </div>
@@ -412,7 +412,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         </div>
 
         <div className="mt-12 md:mt-24 border-t border-border pt-8 md:pt-12 px-4 md:px-0">
-          <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-6 md:mb-8">تحتاج مساعدة؟</h2>
+          <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-6 md:mb-8">Need Help?</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6">
             <div className="md:col-span-2 bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 rounded-lg p-4 md:p-8 border border-green-200 dark:border-green-800">
               <div className="flex items-start gap-3 md:gap-4 mb-4 md:mb-6">
@@ -429,16 +429,16 @@ export default function ProductDetail({ product }: ProductDetailProps) {
         </defs>
       </svg>
                 <div>
-                  <h3 className="text-lg md:text-2xl font-semibold text-foreground">تحدّث معنا</h3>
-                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">دعم فوري على مدار الساعة</p>
+                  <h3 className="text-lg md:text-2xl font-semibold text-foreground">Chat With Us</h3>
+                  <p className="text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">24/7 instant support</p>
                 </div>
               </div>
               <p className="text-muted-foreground text-xs md:text-base mb-4 md:mb-6">
-                فريق الدعم لدينا جاهز للإجابة عن أي استفسار حول هذا المنتج، وتخصيص طلبك، ومنحك نصائح تنسيق تناسب ذوقك.
+                Our support team is ready to answer any questions about this product, customize your order, and provide styling tips that match your taste.
               </p>
               <button
                 onClick={() => {
-                  const message = encodeURIComponent(`مرحباً! أحتاج مساعدة بخصوص ${product.name}. هل يمكنكم مساعدتي؟`)
+                  const message = encodeURIComponent(`Hello! I need help regarding ${product.name}. Can you help me?`)
                   const whatsappUrl = `https://wa.me/201035212724?text=${message}`
                   window.open(whatsappUrl, "_blank")
                 }}
@@ -456,8 +456,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   </linearGradient>
                 </defs>
               </svg>
-                <span className="hidden sm:inline">ابدأ محادثة واتساب</span>
-                <span className="sm:hidden">تحدث الآن</span>
+                <span className="hidden sm:inline">Start WhatsApp Chat</span>
+                <span className="sm:hidden">Chat Now</span>
               </button>
             </div>
 
@@ -472,7 +472,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
                     />
                   </svg>
-                  البريد الإلكتروني
+                  Email
                 </h4>
                 <p className="text-xs md:text-sm text-muted-foreground">support@luxeoptics.com</p>
               </div>
@@ -487,7 +487,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
                     />
                   </svg>
-                  الهاتف
+                  Phone
                 </h4>
                 <p className="text-xs md:text-sm text-muted-foreground">+2010 35212724</p>
               </div>
@@ -499,18 +499,18 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
       {isDesktop ? (
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-          <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogContent className="max-w-2xl" dir="ltr">
             {isOrderSubmitted ? (
               <>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl">تم إنشاء الطلب بنجاح!</DialogTitle>
+                  <DialogTitle className="text-2xl">Order Created Successfully!</DialogTitle>
                 </DialogHeader>
                 <div className="py-6 text-center space-y-3">
                   <p className="text-lg">
-                    رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
+                    Order Number: <span className="font-bold text-primary">{orderNumber}</span>
                   </p>
                   <p className="text-muted-foreground">
-                    سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
+                    Our sales team will contact you soon via WhatsApp to confirm your order
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -521,28 +521,28 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     }}
                     className="px-4 py-2 rounded-md border font-semibold"
                   >
-                    إغلاق
+                    Close
                   </button>
                 </div>
               </>
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle>إتمام الطلب</DialogTitle>
+                  <DialogTitle>Complete Order</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium">الاسم</label>
+                      <label className="text-sm font-medium">Name</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.name}
                         onChange={(e) => setCustomerInfo((p) => ({ ...p, name: e.target.value }))}
-                        placeholder="الاسم الكامل"
+                        placeholder="Full name"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">واتساب</label>
+                      <label className="text-sm font-medium">WhatsApp</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.whatsapp}
@@ -551,7 +551,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">البريد الإلكتروني (اختياري)</label>
+                      <label className="text-sm font-medium">Email (optional)</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.email}
@@ -560,22 +560,22 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">العنوان</label>
+                      <label className="text-sm font-medium">Address</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.address}
                         onChange={(e) => setCustomerInfo((p) => ({ ...p, address: e.target.value }))}
-                        placeholder="العنوان والتفاصيل"
+                        placeholder="Address and details"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">ملاحظات</label>
+                      <label className="text-sm font-medium">Notes</label>
                       <textarea
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         rows={3}
                         value={customerInfo.notes}
                         onChange={(e) => setCustomerInfo((p) => ({ ...p, notes: e.target.value }))}
-                        placeholder="تفاصيل إضافية"
+                        placeholder="Additional details"
                       />
                     </div>
                   </div>
@@ -583,15 +583,15 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                   <div className="space-y-4">
                     <div className="rounded-md border p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">المنتج</span>
+                        <span className="text-sm text-muted-foreground">Product</span>
                         <span className="font-medium">{product.name}</span>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">الكمية</span>
+                        <span className="text-sm text-muted-foreground">Quantity</span>
                         <span className="font-medium">{quantity}</span>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">الإجمالي</span>
+                        <span className="text-sm text-muted-foreground">Total</span>
                         <span className="font-bold text-primary">
                           {formatPrice(product.price * quantity)}
                         </span>
@@ -602,7 +602,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground font-semibold"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? "جاري الإرسال..." : "تأكيد الطلب"}
+                      {isSubmitting ? "Submitting..." : "Confirm Order"}
                     </button>
                   </div>
                 </div>

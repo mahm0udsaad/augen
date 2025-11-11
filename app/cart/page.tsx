@@ -54,7 +54,7 @@ export default function CartPage() {
 
   const handleCheckout = () => {
     if (items.length === 0) {
-      toast.error('السلة فارغة');
+      toast.error('Cart is empty');
       return;
     }
     setIsCheckoutOpen(true);
@@ -62,14 +62,14 @@ export default function CartPage() {
 
   const handleSubmitOrder = async () => {
     if (!customerInfo.name || !customerInfo.whatsapp) {
-      toast.error('الرجاء إدخال الاسم ورقم الواتساب');
+      toast.error('Please enter your name and WhatsApp number');
       return;
     }
 
     // Validate WhatsApp number
     const whatsappRegex = /^[+]?[0-9]{10,15}$/;
     if (!whatsappRegex.test(customerInfo.whatsapp.replace(/\s/g, ''))) {
-      toast.error('رقم الواتساب غير صحيح');
+      toast.error('Invalid WhatsApp number');
       return;
     }
 
@@ -100,23 +100,23 @@ export default function CartPage() {
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'فشل إنشاء الطلب');
+        throw new Error(data.error || 'Failed to create order');
       }
 
       setOrderNumber(data.order.order_number);
       setIsOrderSubmitted(true);
       clearCart();
-      toast.success('تم إنشاء الطلب بنجاح!');
+      toast.success('Order created successfully!');
     } catch (error: any) {
       console.error('Error submitting order:', error);
-      toast.error(error.message || 'حدث خطأ أثناء إنشاء الطلب');
+      toast.error(error.message || 'An error occurred while creating the order');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('ar-EG', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
       currency: 'EGP',
     }).format(price);
@@ -125,15 +125,15 @@ export default function CartPage() {
   if (items.length === 0 && !isOrderSubmitted) {
     return (
       <>
-        <Header />
-        <div className="min-h-screen bg-background pt-20 pb-24">
+        <Header language="en" />
+        <div className="min-h-screen bg-background pt-20 pb-24" dir="ltr">
           <div className="container mx-auto px-4 py-12">
             <div className="flex flex-col items-center justify-center text-center space-y-6">
               <ShoppingBag className="w-24 h-24 text-muted-foreground" />
-              <h1 className="text-2xl font-bold">السلة فارغة</h1>
-              <p className="text-muted-foreground">لم تقم بإضافة أي منتجات إلى السلة بعد</p>
+              <h1 className="text-2xl font-bold">Cart is Empty</h1>
+              <p className="text-muted-foreground">You haven't added any products to your cart yet</p>
               <Link href="/categories">
-                <Button size="lg">تصفح المنتجات</Button>
+                <Button size="lg">Browse Products</Button>
               </Link>
             </div>
           </div>
@@ -144,10 +144,10 @@ export default function CartPage() {
 
   return (
     <>
-      <Header />
-      <div className="min-h-screen bg-background pt-20 pb-24" dir="rtl">
+      <Header language="en" />
+      <div className="min-h-screen bg-background pt-20 pb-24" dir="ltr">
         <div className="container mx-auto px-4 py-6">
-          <h1 className="text-3xl font-bold mb-6">سلة التسوق</h1>
+          <h1 className="text-3xl font-bold mb-6">Shopping Cart</h1>
 
           <div className="grid lg:grid-cols-3 gap-6">
             {/* Cart Items */}
@@ -195,7 +195,7 @@ export default function CartPage() {
                         <Plus className="w-4 h-4" />
                       </Button>
                       <span className="text-sm text-muted-foreground mr-2">
-                        (متاح: {item.maxQuantity})
+                        (Available: {item.maxQuantity})
                       </span>
                     </div>
                   </div>
@@ -218,25 +218,25 @@ export default function CartPage() {
             {/* Order Summary */}
             <div className="lg:col-span-1">
               <div className="bg-card rounded-lg p-6 shadow-sm border sticky top-24">
-                <h2 className="text-xl font-bold mb-4">ملخص الطلب</h2>
+                <h2 className="text-xl font-bold mb-4">Order Summary</h2>
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">المجموع الفرعي:</span>
+                    <span className="text-muted-foreground">Subtotal:</span>
                     <span className="font-semibold">{formatPrice(getTotalPrice())}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">عدد المنتجات:</span>
+                    <span className="text-muted-foreground">Items:</span>
                     <span className="font-semibold">{items.length}</span>
                   </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-lg font-bold">
-                      <span>المجموع الكلي:</span>
+                      <span>Total:</span>
                       <span className="text-primary">{formatPrice(getTotalPrice())}</span>
                     </div>
                   </div>
                 </div>
                 <Button onClick={handleCheckout} className="w-full" size="lg">
-                  إتمام الطلب
+                  Checkout
                 </Button>
                 <Button
                   onClick={clearCart}
@@ -244,7 +244,7 @@ export default function CartPage() {
                   className="w-full mt-2"
                   size="lg"
                 >
-                  مسح السلة
+                  Clear Cart
                 </Button>
               </div>
             </div>
@@ -255,24 +255,24 @@ export default function CartPage() {
       {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
       {isDesktop ? (
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-          <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogContent className="max-w-2xl" dir="ltr">
             {isOrderSubmitted ? (
               <div className="text-center py-8 space-y-6">
                 <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
                 <DialogHeader>
-                  <DialogTitle className="text-2xl">تم إنشاء الطلب بنجاح!</DialogTitle>
+                  <DialogTitle className="text-2xl">Order Created Successfully!</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4">
                   <p className="text-lg">
-                    رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
+                    Order Number: <span className="font-bold text-primary">{orderNumber}</span>
                   </p>
                   <p className="text-muted-foreground">
-                    سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
+                    Our sales team will contact you soon via WhatsApp to confirm your order
                   </p>
                 </div>
                 <div className="flex gap-3 justify-center">
                   <Link href="/categories">
-                    <Button size="lg">مواصلة التسوق</Button>
+                    <Button size="lg">Continue Shopping</Button>
                   </Link>
                   <Button
                     variant="outline"
@@ -282,19 +282,19 @@ export default function CartPage() {
                       setIsOrderSubmitted(false);
                     }}
                   >
-                    إغلاق
+                    Close
                   </Button>
                 </div>
               </div>
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl">إتمام الطلب</DialogTitle>
+                  <DialogTitle className="text-2xl">Complete Order</DialogTitle>
                 </DialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">
-                      الاسم الكامل <span className="text-destructive">*</span>
+                      Full Name <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="name"
@@ -302,14 +302,14 @@ export default function CartPage() {
                       onChange={(e) =>
                         setCustomerInfo({ ...customerInfo, name: e.target.value })
                       }
-                      placeholder="أدخل اسمك الكامل"
+                      placeholder="Enter your full name"
                       required
                     />
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="whatsapp">
-                      رقم الواتساب <span className="text-destructive">*</span>
+                      WhatsApp Number <span className="text-destructive">*</span>
                     </Label>
                     <Input
                       id="whatsapp"
@@ -321,12 +321,12 @@ export default function CartPage() {
                       required
                     />
                     <p className="text-xs text-muted-foreground">
-                      سيتم التواصل معك عبر هذا الرقم
+                      We will contact you via this number
                     </p>
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="email">البريد الإلكتروني (اختياري)</Label>
+                    <Label htmlFor="email">Email (optional)</Label>
                     <Input
                       id="email"
                       type="email"
@@ -339,34 +339,34 @@ export default function CartPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">العنوان (اختياري)</Label>
+                    <Label htmlFor="address">Address (optional)</Label>
                     <Textarea
                       id="address"
                       value={customerInfo.address}
                       onChange={(e) =>
                         setCustomerInfo({ ...customerInfo, address: e.target.value })
                       }
-                      placeholder="أدخل عنوانك الكامل"
+                      placeholder="Enter your full address"
                       rows={3}
                     />
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="notes">ملاحظات إضافية (اختياري)</Label>
+                    <Label htmlFor="notes">Additional Notes (optional)</Label>
                     <Textarea
                       id="notes"
                       value={customerInfo.notes}
                       onChange={(e) =>
                         setCustomerInfo({ ...customerInfo, notes: e.target.value })
                       }
-                      placeholder="أي ملاحظات خاصة بالطلب"
+                      placeholder="Any special notes for the order"
                       rows={3}
                     />
                   </div>
 
                   <div className="border-t pt-4">
                     <div className="flex justify-between text-lg font-bold mb-4">
-                      <span>المجموع الكلي:</span>
+                      <span>Total:</span>
                       <span className="text-primary">{formatPrice(getTotalPrice())}</span>
                     </div>
                     <Button
@@ -375,7 +375,7 @@ export default function CartPage() {
                       size="lg"
                       disabled={isSubmitting}
                     >
-                      {isSubmitting ? 'جاري الإرسال...' : 'تأكيد الطلب'}
+                      {isSubmitting ? 'Submitting...' : 'Confirm Order'}
                     </Button>
                   </div>
                 </div>

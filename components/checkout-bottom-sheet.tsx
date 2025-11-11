@@ -87,7 +87,7 @@ export default function CheckoutBottomSheet({
           height: "auto",
           paddingBottom: "env(safe-area-inset-bottom)",
         }}
-        dir="rtl"
+        dir="ltr"
       >
         {/* Handle Bar */}
         <div className="flex justify-center pt-3 pb-2">
@@ -97,7 +97,7 @@ export default function CheckoutBottomSheet({
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b sticky top-0 bg-background z-10">
           <h2 className="text-xl font-bold">
-            {isOrderSubmitted ? "تم الطلب بنجاح!" : "إتمام الطلب"}
+            {isOrderSubmitted ? "Order Successful!" : "Complete Order"}
           </h2>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full">
             <X className="w-5 h-5" />
@@ -111,20 +111,20 @@ export default function CheckoutBottomSheet({
               <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
               <div className="space-y-4">
                 <p className="text-lg">
-                  رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
+                  Order Number: <span className="font-bold text-primary">{orderNumber}</span>
                 </p>
                 <p className="text-muted-foreground">
-                  سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
+                  Our sales team will contact you soon via WhatsApp to confirm your order
                 </p>
               </div>
               <div className="flex flex-col gap-3 pt-4">
                 <Link href="/categories" className="w-full">
                   <Button size="lg" className="w-full min-h-[48px]">
-                    مواصلة التسوق
+                    Continue Shopping
                   </Button>
                 </Link>
                 <Button variant="outline" size="lg" onClick={onClose} className="w-full min-h-[48px]">
-                  إغلاق
+                  Close
                 </Button>
               </div>
             </div>
@@ -132,7 +132,7 @@ export default function CheckoutBottomSheet({
             <div className="space-y-4 py-4">
               <div className="space-y-2">
                 <Label htmlFor="name" className="text-base">
-                  الاسم الكامل <span className="text-destructive">*</span>
+                  Full Name <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="name"
@@ -140,7 +140,7 @@ export default function CheckoutBottomSheet({
                   onChange={(e) =>
                     onCustomerInfoChange({ ...customerInfo, name: e.target.value })
                   }
-                  placeholder="أدخل اسمك الكامل"
+                  placeholder="Enter your full name"
                   required
                   className="min-h-[48px] text-base"
                   autoComplete="name"
@@ -149,7 +149,7 @@ export default function CheckoutBottomSheet({
 
               <div className="space-y-2">
                 <Label htmlFor="whatsapp" className="text-base">
-                  رقم الواتساب <span className="text-destructive">*</span>
+                  WhatsApp Number <span className="text-destructive">*</span>
                 </Label>
                 <Input
                   id="whatsapp"
@@ -164,13 +164,13 @@ export default function CheckoutBottomSheet({
                   autoComplete="tel"
                 />
                 <p className="text-xs text-muted-foreground">
-                  سيتم التواصل معك عبر هذا الرقم
+                  We will contact you via this number
                 </p>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="email" className="text-base">
-                  البريد الإلكتروني (اختياري)
+                  Email (optional)
                 </Label>
                 <Input
                   id="email"
@@ -187,7 +187,7 @@ export default function CheckoutBottomSheet({
 
               <div className="space-y-2">
                 <Label htmlFor="address" className="text-base">
-                  العنوان (اختياري)
+                  Address (optional)
                 </Label>
                 <Textarea
                   id="address"
@@ -195,7 +195,7 @@ export default function CheckoutBottomSheet({
                   onChange={(e) =>
                     onCustomerInfoChange({ ...customerInfo, address: e.target.value })
                   }
-                  placeholder="أدخل عنوانك الكامل"
+                  placeholder="Enter your full address"
                   rows={3}
                   className="text-base resize-none"
                   autoComplete="street-address"
@@ -204,7 +204,7 @@ export default function CheckoutBottomSheet({
 
               <div className="space-y-2">
                 <Label htmlFor="notes" className="text-base">
-                  ملاحظات إضافية (اختياري)
+                  Additional Notes (optional)
                 </Label>
                 <Textarea
                   id="notes"
@@ -212,7 +212,7 @@ export default function CheckoutBottomSheet({
                   onChange={(e) =>
                     onCustomerInfoChange({ ...customerInfo, notes: e.target.value })
                   }
-                  placeholder="أي ملاحظات خاصة بالطلب"
+                  placeholder="Any special notes for the order"
                   rows={3}
                   className="text-base resize-none"
                 />
@@ -220,7 +220,7 @@ export default function CheckoutBottomSheet({
 
               <div className="border-t pt-4 mt-6 space-y-4">
                 <div className="flex justify-between text-lg font-bold">
-                  <span>المجموع الكلي:</span>
+                  <span>Total:</span>
                   <span className="text-primary">{totalPrice}</span>
                 </div>
                 <Button
@@ -229,7 +229,7 @@ export default function CheckoutBottomSheet({
                   size="lg"
                   disabled={isSubmitting}
                 >
-                  {isSubmitting ? "جاري الإرسال..." : "تأكيد الطلب"}
+                  {isSubmitting ? "Submitting..." : "Confirm Order"}
                 </Button>
               </div>
             </div>

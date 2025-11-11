@@ -56,25 +56,25 @@ export default function ContactPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background" dir="rtl">
-      <Header />
+    <main className="min-h-screen bg-background" dir="ltr">
+      <Header language="en" />
 
       <section className="px-4 py-8 sm:py-12 md:py-16 bg-secondary/50">
         <div className="max-w-6xl mx-auto">
           <div className="animate-slide-up flex items-start justify-between gap-4">
             <div className="flex-1">
               <h1 className="text-3xl sm:text-4xl md:text-5xl font-serif font-bold text-foreground mb-3 md:mb-4">
-                تواصل معنا
+                Contact Us
               </h1>
               <p className="text-base sm:text-lg text-muted-foreground max-w-2xl">
-                لديك أسئلة حول نظاراتنا؟ يسعدنا أن نساعدك في اختيار الإطار المناسب وشرح خدمة التجربة الافتراضية متى شئت.
+                Have questions about our eyewear? We're happy to help you choose the right frame and explain our virtual try-on service anytime.
               </p>
             </div>
             <button
               onClick={() => setIsBottomSheetOpen(true)}
               className="md:hidden flex-shrink-0 px-4 py-2.5 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 active:bg-accent/80 transition-smooth font-semibold text-sm min-h-[44px] whitespace-nowrap"
             >
-              رسالة سريعة
+              Quick Message
             </button>
           </div>
         </div>
@@ -88,7 +88,7 @@ export default function ContactPage() {
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-6">
                   <div>
                     <label htmlFor="name" className="block text-sm font-semibold text-foreground mb-2">
-                      الاسم الكامل
+                      Full Name
                     </label>
                     <input
                       type="text"
@@ -98,12 +98,12 @@ export default function ContactPage() {
                       onChange={handleChange}
                       required
                       className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-smooth text-base"
-                      placeholder="اكتب اسمك هنا"
+                      placeholder="Enter your name"
                     />
                   </div>
                   <div>
                     <label htmlFor="email" className="block text-sm font-semibold text-foreground mb-2">
-                      البريد الإلكتروني
+                      Email
                     </label>
                     <input
                       type="email"
@@ -120,7 +120,7 @@ export default function ContactPage() {
 
                 <div>
                   <label htmlFor="subject" className="block text-sm font-semibold text-foreground mb-2">
-                    الموضوع
+                    Subject
                   </label>
                   <input
                     type="text"
@@ -130,13 +130,13 @@ export default function ContactPage() {
                     onChange={handleChange}
                     required
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-smooth text-base"
-                    placeholder="كيف يمكننا مساعدتك؟"
+                    placeholder="How can we help you?"
                   />
                 </div>
 
                 <div>
                   <label htmlFor="message" className="block text-sm font-semibold text-foreground mb-2">
-                    رسالتك
+                    Your Message
                   </label>
                   <textarea
                     id="message"
@@ -146,7 +146,7 @@ export default function ContactPage() {
                     required
                     rows={6}
                     className="w-full px-4 py-3 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-smooth resize-none text-base"
-                    placeholder="شاركنا تفاصيل استفسارك..."
+                    placeholder="Share your inquiry details..."
                   />
                 </div>
 
@@ -154,7 +154,7 @@ export default function ContactPage() {
                   type="submit"
                   className="w-full px-6 py-3 md:py-4 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 active:bg-accent/80 transition-smooth font-semibold text-base md:text-lg min-h-[48px] hover:scale-105 active:scale-95"
                 >
-                  إرسال الرسالة
+                  Send Message
                 </button>
 
                 {submitted && (
@@ -167,7 +167,7 @@ export default function ContactPage() {
                           clipRule="evenodd"
                         />
                       </svg>
-                      تم إرسال رسالتك بنجاح! سنتواصل معك قريبًا.
+                      Your message has been sent successfully! We'll contact you soon.
                     </p>
                   </div>
                 )}
@@ -194,11 +194,11 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">العنوان</h3>
+                    <h3 className="font-semibold text-foreground mb-1">Address</h3>
                     <p className="text-sm text-muted-foreground">
-                      ٤٤ خاتم المرسلين
+                      44 Khatem El-Morsaleen
                       <br />
-                      الجيزة – مصر
+                      Giza – Egypt
                     </p>
                   </div>
                 </div>
@@ -217,13 +217,13 @@ export default function ContactPage() {
                     </svg>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-1">ساعات العمل</h3>
+                    <h3 className="font-semibold text-foreground mb-1">Business Hours</h3>
                     <p className="text-sm text-muted-foreground">
-                      الإثنين – الجمعة: 10:00 ص - 7:00 م
+                      Monday – Friday: 10:00 AM - 7:00 PM
                       <br />
-                      السبت: 11:00 ص - 6:00 م
+                      Saturday: 11:00 AM - 6:00 PM
                       <br />
-                      الأحد: مغلق
+                      Sunday: Closed
                     </p>
                   </div>
                 </div>
@@ -235,14 +235,14 @@ export default function ContactPage() {
                     <WhatsAppIcon className="w-5 h-5 text-accent" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-2">واتساب</h3>
+                    <h3 className="font-semibold text-foreground mb-2">WhatsApp</h3>
                     <a
                       href={whatsappLink}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="inline-flex items-center gap-2 px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 active:bg-green-700 transition-smooth font-semibold text-sm min-h-[44px]"
                     >
-                      راسلنا الآن
+                      Message Us Now
                     </a>
                   </div>
                 </div>
@@ -254,8 +254,8 @@ export default function ContactPage() {
                     <Share2 className="h-5 w-5 text-accent" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-foreground mb-2">تابعنا</h3>
-                    <p className="text-sm text-muted-foreground mb-4">آخر الإصدارات والمجموعات عبر المنصات التالية</p>
+                    <h3 className="font-semibold text-foreground mb-2">Follow Us</h3>
+                    <p className="text-sm text-muted-foreground mb-4">Latest releases and collections on the following platforms</p>
                     <div className="flex flex-wrap items-center gap-3">
                       {SOCIAL_LINKS.map((link) => {
                         const Icon = SOCIAL_ICON_MAP[link.id]
@@ -267,7 +267,7 @@ export default function ContactPage() {
                             rel="noopener noreferrer"
                             className="flex h-11 w-11 items-center justify-center rounded-full border border-border text-foreground transition-all hover:bg-foreground hover:text-background"
                           >
-                            <span className="sr-only">{link.label.ar}</span>
+                            <span className="sr-only">{link.label.en}</span>
                             <Icon className="h-5 w-5" />
                           </a>
                         )
@@ -281,7 +281,7 @@ export default function ContactPage() {
 
           <div className="border-t border-border pt-12 md:pt-16">
             <h2 className="text-2xl sm:text-3xl md:text-4xl font-serif font-bold text-foreground mb-8 md:mb-12 text-center animate-slide-up">
-              زر صالة العرض الخاصة بنا
+              Visit Our Showroom
             </h2>
             <div className="rounded-lg overflow-hidden shadow-lg h-80 sm:h-96 md:h-[500px] animate-scale-in">
               <iframe
@@ -304,7 +304,7 @@ export default function ContactPage() {
         onSubmit={handleBottomSheetSubmit}
       />
 
-      <Footer />
+      <Footer language="en" />
     </main>
   )
 }

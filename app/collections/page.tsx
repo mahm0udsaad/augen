@@ -11,37 +11,37 @@ import type { LucideIcon } from "lucide-react"
 
 const buildHeroStats = (categoryCount: number, subcategoryCount: number) => [
   {
-    label: "الفئات الرئيسية",
+    label: "Main Categories",
     value: categoryCount.toString(),
-    description: "تشكيلات مستوحاة من الشمس والبصريات",
+    description: "Collections inspired by sun and optics",
     icon: Grid3x3,
   },
   {
-    label: "الفئات الفرعية",
+    label: "Subcategories",
     value: subcategoryCount.toString(),
-    description: "خيارات رجالية ونسائية وأطفال",
+    description: "Men's, women's, and children's options",
     icon: Layers,
   },
   {
-    label: "تفاصيل التصميم",
+    label: "Design Details",
     value: "+30",
-    description: "مواد وألوان مدروسة بعناية",
+    description: "Carefully considered materials and colors",
     icon: Sparkles,
   },
 ]
 
 const heroHighlights = [
   {
-    title: "عدسات ذكية",
-    description: "حماية UV400 مع طبقات مضادة للانعكاس تعكس ضوء المدينة.",
+    title: "Smart Lenses",
+    description: "UV400 protection with anti-reflective layers that reflect city light.",
   },
   {
-    title: "مواد فاخرة",
-    description: "تيتانيوم، ألياف كربون، وأسيتات نباتي تمنح راحة عالية.",
+    title: "Luxury Materials",
+    description: "Titanium, carbon fiber, and plant-based acetate provide superior comfort.",
   },
   {
-    title: "خدمة شخصية",
-    description: "استشارات افتراضية لاختيار الإطار المناسب لشكل وجهك.",
+    title: "Personalized Service",
+    description: "Virtual consultations to choose the right frame for your face shape.",
   },
 ]
 
@@ -54,8 +54,8 @@ export default async function CollectionsPage() {
   const heroStats = buildHeroStats(categoryShowcase.length, subcategoryShowcase.length)
 
   return (
-    <div className="min-h-screen bg-black text-white" dir="rtl">
-      <Header />
+    <div className="min-h-screen bg-black text-white" dir="ltr">
+      <Header language="en" />
       <main className="mx-auto w-full max-w-6xl px-4 py-12 md:py-16">
         <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-black via-zinc-900 to-black p-8 md:p-12 shadow-2xl">
           <div className="absolute inset-0 opacity-60 bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.05),_transparent_55%)]" />
@@ -63,13 +63,13 @@ export default async function CollectionsPage() {
             <div className="space-y-6">
               <p className="inline-flex items-center gap-2 text-sm font-semibold text-gray-200">
                 <span className="block h-[1px] w-8 bg-gray-300" />
-                تشكيلات توقيع Augen
+                Signature Augen Collections
               </p>
               <h1 className="text-4xl leading-tight font-black text-white md:text-6xl">
-                مجموعات حصرية تُشعرك بأن كل إطار صُنع لأجلك
+                Exclusive collections that make you feel like every frame was made for you
               </h1>
               <p className="text-lg text-gray-200 md:text-xl">
-                صممنا كل مجموعة لتوازن بين الموضة والراحة. استكشف تشكيلة النظارات الشمسية والطبية التي تمنحك هوية بصرية مميزة، مع خامات فاخرة ولمسات حرفية دقيقة.
+                We designed each collection to balance fashion and comfort. Explore our range of sunglasses and prescription glasses that give you a distinctive visual identity, with luxury materials and precise artisanal touches.
               </p>
 
               <div className="grid gap-4 sm:grid-cols-3">
@@ -88,10 +88,10 @@ export default async function CollectionsPage() {
 
             <div className="space-y-5 rounded-3xl border border-white/10 bg-white/5 p-6 backdrop-blur">
               <div className="rounded-2xl bg-gradient-to-br from-gray-200/10 via-white/5 to-transparent p-5 text-gray-100">
-                <p className="text-sm font-semibold text-gray-200">رحلة التصميم</p>
-                <p className="mt-2 text-2xl font-bold text-white">من الفكرة إلى الإطار</p>
+                <p className="text-sm font-semibold text-gray-200">Design Journey</p>
+                <p className="mt-2 text-2xl font-bold text-white">From Concept to Frame</p>
                 <p className="mt-2 text-sm text-gray-300">
-                  كل مجموعة تمر بثلاث مراحل: اختيار المواد، اختبار العدسات، وتفاصيل التشطيب.
+                  Each collection goes through three stages: material selection, lens testing, and finishing details.
                 </p>
                 <ul className="mt-4 space-y-2 text-sm text-gray-200">
                   {heroHighlights.map((item) => (
@@ -107,14 +107,14 @@ export default async function CollectionsPage() {
               </div>
               <div className="flex items-center justify-between rounded-2xl border border-white/10 bg-black/60 p-5">
                 <div>
-                  <p className="text-sm text-gray-300">جاهز لاختيار المجموعة؟</p>
-                  <p className="text-lg font-semibold text-white">ابدأ من التصنيف المناسب لك</p>
+                  <p className="text-sm text-gray-300">Ready to choose a collection?</p>
+                  <p className="text-lg font-semibold text-white">Start with the right category for you</p>
                 </div>
                 <Link
                   href="/categories"
                   className="rounded-full border border-white/30 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
                 >
-                  تصفح التصنيفات
+                  Browse Categories
                 </Link>
               </div>
             </div>
@@ -147,7 +147,7 @@ export default async function CollectionsPage() {
                       href={`/categories?parent=${category.id}`}
                       className="rounded-full border border-white/30 px-5 py-2 text-sm font-semibold text-white transition hover:bg-white hover:text-black"
                     >
-                      اكتشف الفئة
+                      Discover Category
                     </Link>
                   </div>
                   <div className="space-y-3">
@@ -204,7 +204,7 @@ export default async function CollectionsPage() {
           )})}
         </section>
       </main>
-      <Footer />
+      <Footer language="en" />
     </div>
   )
 }

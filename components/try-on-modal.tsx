@@ -45,7 +45,7 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
       }
     } catch (error) {
       console.error("Error accessing camera:", error)
-      setError("تعذّر الوصول إلى الكاميرا. يرجى التحقق من الأذونات والمحاولة مجددًا.")
+      setError("Unable to access camera. Please check permissions and try again.")
     }
   }
 
@@ -86,7 +86,7 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
       const response = await tryOnAction(formData)
 
       if (!response.ok) {
-        setError(response.message || "فشل إنشاء التجربة. حاول مرة أخرى.")
+        setError(response.message || "Failed to create try-on. Please try again.")
         return
       }
 
@@ -94,8 +94,8 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
       setStep("result")
     } catch (error) {
       console.error("Error generating try-on:", error)
-      const errorMessage = error instanceof Error ? error.message : "حدث خطأ غير معروف"
-      setError(`فشل إنشاء تجربة القياس: ${errorMessage}`)
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred"
+      setError(`Failed to create try-on: ${errorMessage}`)
     } finally {
       setLoading(false)
     }
@@ -112,14 +112,14 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
     <Sheet open={open} onOpenChange={onClose}>
       <SheetContent side="bottom" className="max-h-[90vh] overflow-y-auto p-0">
         <SheetHeader className="sticky top-0 bg-background border-b border-border px-4 md:px-6 py-4">
-          <SheetTitle className="text-lg md:text-2xl font-serif font-bold text-foreground text-right">
-            جرّب {productName}
+          <SheetTitle className="text-lg md:text-2xl font-serif font-bold text-foreground text-left">
+            Try On {productName}
           </SheetTitle>
         </SheetHeader>
 
-        <div className="p-4 md:p-6 space-y-4" dir="rtl">
+        <div className="p-4 md:p-6 space-y-4" dir="ltr">
           {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm md:text-base text-right">
+            <div className="p-4 bg-red-50 border border-red-200 rounded-lg text-red-800 text-sm md:text-base text-left">
               {error}
             </div>
           )}
@@ -127,11 +127,11 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
           {step === "camera" && (
             <div className="space-y-4">
               <div className="space-y-2">
-                <p className="text-muted-foreground text-sm md:text-base text-right">
-                  ضع وجهك في المنتصف والتقط صورة شخصية
+                <p className="text-muted-foreground text-sm md:text-base text-left">
+                  Position your face in the center and take a selfie
                 </p>
-                <p className="text-xs text-muted-foreground text-right">
-                  برفع الصورة فإنك توافق على معالجتها مؤقتاً لغرض المعاينة فقط، وسيتم حذفها تلقائياً خلال ٧٢ ساعة.
+                <p className="text-xs text-muted-foreground text-left">
+                  By uploading the image, you agree to its temporary processing for preview purposes only, and it will be automatically deleted within 72 hours.
                 </p>
               </div>
               <div className="relative bg-secondary rounded-lg overflow-hidden aspect-video w-full">
@@ -147,30 +147,30 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
                 onClick={takeSelfie}
                 className="w-full px-6 py-3 md:py-4 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 active:bg-accent/80 transition-colors font-semibold text-base md:text-lg min-h-[44px]"
               >
-                التقط صورة
+                Take Photo
               </button>
             </div>
           )}
 
           {step === "preview" && selfieImage && (
             <div className="space-y-4">
-              <p className="text-muted-foreground text-sm md:text-base text-right">راجع صورتك</p>
+              <p className="text-muted-foreground text-sm md:text-base text-left">Review your photo</p>
               <div className="relative bg-secondary rounded-lg overflow-hidden aspect-video w-full">
-                <Image src={selfieImage || "/placeholder.svg"} alt="صورتك الشخصية" fill className="object-cover" />
+                <Image src={selfieImage || "/placeholder.svg"} alt="Your selfie" fill className="object-cover" />
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={retakeSelfie}
                   className="flex-1 px-6 py-3 md:py-4 border border-primary text-primary rounded-lg hover:bg-primary/5 active:bg-primary/10 transition-colors font-semibold text-base min-h-[44px]"
                 >
-                  إعادة التقاط
+                  Retake
                 </button>
                 <button
                   onClick={generateTryOn}
                   disabled={loading}
                   className="flex-1 px-6 py-3 md:py-4 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 active:bg-accent/80 disabled:opacity-50 disabled:cursor-not-allowed transition-colors font-semibold text-base min-h-[44px]"
                 >
-                  {loading ? "جاري المعالجة..." : "جرّب النظارة"}
+                  {loading ? "Processing..." : "Try On Glasses"}
                 </button>
               </div>
             </div>
@@ -178,22 +178,22 @@ export default function TryOnModal({ productName, productImage, onClose, open }:
 
           {step === "result" && resultImage && (
             <div className="space-y-4">
-              <p className="text-muted-foreground text-sm md:text-base text-right">هكذا تبدو مع {productName}</p>
+              <p className="text-muted-foreground text-sm md:text-base text-left">This is how you look with {productName}</p>
               <div className="relative bg-secondary rounded-lg overflow-hidden aspect-video w-full">
-                <Image src={resultImage || "/placeholder.svg"} alt="نتيجة التجربة" fill className="object-cover" />
+                <Image src={resultImage || "/placeholder.svg"} alt="Try-on result" fill className="object-cover" />
               </div>
               <div className="flex gap-3">
                 <button
                   onClick={retakeSelfie}
                   className="flex-1 px-6 py-3 md:py-4 border border-primary text-primary rounded-lg hover:bg-primary/5 active:bg-primary/10 transition-colors font-semibold text-base min-h-[44px]"
                 >
-                  جرّب مرة أخرى
+                  Try Again
                 </button>
                 <button
                   onClick={onClose}
                   className="flex-1 px-6 py-3 md:py-4 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 active:bg-primary/80 transition-colors font-semibold text-base min-h-[44px]"
                 >
-                  إغلاق
+                  Close
                 </button>
               </div>
             </div>

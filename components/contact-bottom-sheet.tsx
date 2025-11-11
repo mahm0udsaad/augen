@@ -90,16 +90,16 @@ export default function ContactBottomSheet({ isOpen, onClose, onSubmit }: Contac
         </div>
 
         {/* Content */}
-        <div className="px-4 py-6 sm:px-6" dir="rtl">
-          <div className="mb-6 text-right">
-            <h2 className="text-2xl font-serif font-bold text-foreground mb-1">أرسل لنا رسالة</h2>
-            <p className="text-sm text-muted-foreground">سنعاود التواصل معك في أقرب وقت</p>
+        <div className="px-4 py-6 sm:px-6" dir="ltr">
+          <div className="mb-6 text-left">
+            <h2 className="text-2xl font-serif font-bold text-foreground mb-1">Send Us a Message</h2>
+            <p className="text-sm text-muted-foreground">We'll get back to you as soon as possible</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4 text-right">
+          <form onSubmit={handleSubmit} className="space-y-4 text-left">
             <div>
               <label htmlFor="bs-name" className="block text-xs font-semibold text-foreground mb-2">
-                الاسم الكامل
+                Full Name
               </label>
               <input
                 type="text"
@@ -109,13 +109,13 @@ export default function ContactBottomSheet({ isOpen, onClose, onSubmit }: Contac
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-smooth text-sm"
-                placeholder="اكتب اسمك هنا"
+                placeholder="Enter your name"
               />
             </div>
 
             <div>
               <label htmlFor="bs-email" className="block text-xs font-semibold text-foreground mb-2">
-                البريد الإلكتروني
+                Email
               </label>
               <input
                 type="email"
@@ -131,7 +131,7 @@ export default function ContactBottomSheet({ isOpen, onClose, onSubmit }: Contac
 
             <div>
               <label htmlFor="bs-subject" className="block text-xs font-semibold text-foreground mb-2">
-                الموضوع
+                Subject
               </label>
               <input
                 type="text"
@@ -141,13 +141,13 @@ export default function ContactBottomSheet({ isOpen, onClose, onSubmit }: Contac
                 onChange={handleChange}
                 required
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-smooth text-sm"
-                placeholder="كيف يمكننا مساعدتك؟"
+                placeholder="How can we help you?"
               />
             </div>
 
             <div>
               <label htmlFor="bs-message" className="block text-xs font-semibold text-foreground mb-2">
-                رسالتك
+                Your Message
               </label>
               <textarea
                 id="bs-message"
@@ -157,7 +157,7 @@ export default function ContactBottomSheet({ isOpen, onClose, onSubmit }: Contac
                 required
                 rows={4}
                 className="w-full px-3 py-2.5 rounded-lg border border-border bg-background text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-accent transition-smooth resize-none text-sm"
-                placeholder="شاركنا التفاصيل..."
+                placeholder="Share the details..."
               />
             </div>
 
@@ -167,13 +167,13 @@ export default function ContactBottomSheet({ isOpen, onClose, onSubmit }: Contac
                 onClick={onClose}
                 className="flex-1 px-4 py-2.5 border border-border text-foreground rounded-lg hover:bg-secondary/50 active:bg-secondary transition-smooth font-semibold text-sm min-h-[44px]"
               >
-                إلغاء
+                Cancel
               </button>
               <button
                 type="submit"
                 className="flex-1 px-4 py-2.5 bg-accent text-accent-foreground rounded-lg hover:bg-accent/90 active:bg-accent/80 transition-smooth font-semibold text-sm min-h-[44px]"
               >
-                إرسال
+                Send
               </button>
             </div>
           </form>

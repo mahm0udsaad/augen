@@ -32,11 +32,11 @@ export default function BottomNav() {
   }, [lastScrollY])
 
   const navItems = [
-    { href: "/", label: "الرئيسية", icon: "home" },
-    { href: "/categories", label: "المنتجات", icon: "grid" },
-    { href: "/favorites", label: "المفضلة", icon: "heart" },
-    { href: "/cart", label: "السلة", icon: "cart" },
-    { href: "/contact", label: "اتصل بنا", icon: "chat" },
+    { href: "/", label: "Home", icon: "home" },
+    { href: "/categories", label: "Products", icon: "grid" },
+    { href: "/favorites", label: "Favorites", icon: "heart" },
+    { href: "/cart", label: "Cart", icon: "cart" },
+    { href: "/contact", label: "Contact", icon: "chat" },
   ]
 
   return (
@@ -44,7 +44,7 @@ export default function BottomNav() {
       className={`fixed bottom-0 left-0 right-0 bg-background border-t border-border z-40 md:hidden transition-transform duration-300 ${
         isVisible ? "translate-y-0" : "translate-y-full"
       }`}
-      dir="rtl"
+      dir="ltr"
     >
       <div className="flex items-center justify-around max-w-6xl mx-auto h-16">
         {navItems.map((item) => {

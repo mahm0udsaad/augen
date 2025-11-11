@@ -6,10 +6,10 @@ import { Toaster } from "@/components/ui/sonner"
 import { Providers } from "@/components/providers"
 
 export const metadata: Metadata = {
-  title: "أوغن – تشكيلة نظارات فاخرة",
+  title: "Augen – Luxury Eyewear Collections",
   description:
-    "اكتشف تشكيلة أوغن المختارة من أرقى إطارات النظارات المصممة يدويًا لكل المناسبات. تواصل معنا على ‎+2010 35212724.",
-  keywords: ["نظارات", "أوغن", "نظارات شمسية", "إطارات فاخرة", "نظارات طبية"],
+    "Explore Augen's hand-finished eyewear curated for every style. Connect with our concierge team at +2010 35212724.",
+  keywords: ["eyewear", "Augen", "sunglasses", "luxury frames", "prescription glasses"],
   authors: [{ name: "Augen" }],
   creator: "Augen",
   publisher: "Augen",
@@ -23,26 +23,26 @@ export const metadata: Metadata = {
     canonical: "/",
   },
   openGraph: {
-    title: "أوغن – تشكيلة نظارات فاخرة",
-    description: "تعرّف على أفضل إطارات النظارات المصممة بعناية من أوغن لكل الأذواق.",
+    title: "Augen – Luxury Eyewear Collections",
+    description: "Discover meticulously crafted frames that elevate your daily look.",
     url: "/",
     siteName: "Augen",
     images: [
       {
-        url: "/images/icon.png",
+        url: "https://augen.vercel.app/og.png",
         width: 1200,
         height: 630,
-        alt: "Augen Logo",
+        alt: "Augen – Luxury Eyewear Collections",
       },
     ],
-    locale: "ar_EG",
+    locale: "en_US",
     type: "website",
   },
   twitter: {
     card: "summary_large_image",
-    title: "أوغن – تشكيلة نظارات فاخرة",
-    description: "تعرّف على أفضل إطارات النظارات المصممة بعناية من أوغن.",
-    images: ["/images/icon.png"],
+    title: "Augen – Luxury Eyewear Collections",
+    description: "Discover meticulously crafted frames that elevate your daily look.",
+    images: ["/og.png"],
   },
   robots: {
     index: true,
@@ -68,7 +68,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="ar" dir="rtl">
+    <html lang="en" dir="ltr">
       <body className={`font-sans antialiased`}>
         <Providers>
           {children}

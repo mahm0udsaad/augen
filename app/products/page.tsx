@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
@@ -16,7 +16,7 @@ import { toast } from "sonner"
 
 const CUSTOMER_INFO_STORAGE_KEY = "augen_checkout_info"
 
-export default function ProductsPage() {
+function ProductsPageContent() {
   const searchParams = useSearchParams()
   const isDesktop = useMediaQuery("(min-width: 768px)")
 
@@ -89,17 +89,17 @@ export default function ProductsPage() {
   }
 
   const formatPrice = (price: number) =>
-    new Intl.NumberFormat("ar-EG", { style: "currency", currency: "EGP" }).format(price)
+    new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP" }).format(price)
 
   const handleSubmitOrder = async () => {
     if (!selectedProduct) return
     if (!customerInfo.name || !customerInfo.whatsapp) {
-      toast.error("الرجاء إدخال الاسم ورقم الواتساب")
+      toast.error("Please enter your name and WhatsApp number")
       return
     }
     const whatsappRegex = /^[+]?[0-9]{10,15}$/
     if (!whatsappRegex.test(customerInfo.whatsapp.replace(/\s/g, ""))) {
-      toast.error("رقم الواتساب غير صحيح")
+      toast.error("Invalid WhatsApp number")
       return
     }
 
@@ -127,29 +127,29 @@ export default function ProductsPage() {
       })
       const data = await response.json()
       if (!response.ok) {
-        throw new Error(data.error || "فشل إنشاء الطلب")
+        throw new Error(data.error || "Failed to create order")
       }
       setOrderNumber(data.order.order_number)
       setIsOrderSubmitted(true)
-      toast.success("تم إنشاء الطلب بنجاح!")
+      toast.success("Order created successfully!")
     } catch (error: any) {
       console.error("Error submitting order:", error)
-      toast.error(error.message || "حدث خطأ أثناء إنشاء الطلب")
+      toast.error(error.message || "An error occurred while creating the order")
     } finally {
       setIsSubmitting(false)
     }
   }
 
   return (
-    <main className="min-h-screen bg-background" dir="rtl">
-      <Header />
+    <main className="min-h-screen bg-background" dir="ltr">
+      <Header language="en" />
       <div className="container mx-auto px-4 py-8 md:py-12">
         <div className="mb-6 md:mb-10">
-          <h1 className="text-3xl md:text-4xl font-bold">المنتجات</h1>
+          <h1 className="text-3xl md:text-4xl font-bold">Products</h1>
           {parentFilter || subFilter ? (
-            <p className="text-muted-foreground mt-1">تصفية حسب الفئة المختارة</p>
+            <p className="text-muted-foreground mt-1">Filtered by selected category</p>
           ) : (
-            <p className="text-muted-foreground mt-1">تصفح جميع منتجات Augen</p>
+            <p className="text-muted-foreground mt-1">Browse all Augen products</p>
           )}
         </div>
 
@@ -159,7 +159,7 @@ export default function ProductsPage() {
           </div>
         ) : filteredProducts.length === 0 ? (
           <div className="text-center py-24">
-            <p className="text-lg">لا توجد منتجات مطابقة حالياً</p>
+            <p className="text-lg">No matching products found at the moment</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-8">
@@ -177,7 +177,7 @@ export default function ProductsPage() {
                     disabled={product.quantity !== undefined && product.quantity <= 0}
                     onClick={() => handleOrderNow(product)}
                   >
-                    اطلب الآن
+                    Order Now
                   </Button>
                 </div>
               </div>
@@ -189,18 +189,18 @@ export default function ProductsPage() {
       {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
       {isDesktop ? (
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-          <DialogContent className="max-w-2xl" dir="rtl">
+          <DialogContent className="max-w-2xl" dir="ltr">
             {isOrderSubmitted ? (
               <>
                 <DialogHeader>
-                  <DialogTitle className="text-2xl">تم إنشاء الطلب بنجاح!</DialogTitle>
+                  <DialogTitle className="text-2xl">Order Created Successfully!</DialogTitle>
                 </DialogHeader>
                 <div className="py-6 text-center space-y-3">
                   <p className="text-lg">
-                    رقم الطلب: <span className="font-bold text-primary">{orderNumber}</span>
+                    Order Number: <span className="font-bold text-primary">{orderNumber}</span>
                   </p>
                   <p className="text-muted-foreground">
-                    سيتواصل معك فريق المبيعات قريباً عبر الواتساب لتأكيد الطلب
+                    Our sales team will contact you soon via WhatsApp to confirm your order
                   </p>
                 </div>
                 <div className="grid grid-cols-2 gap-2">
@@ -211,28 +211,28 @@ export default function ProductsPage() {
                       setSelectedProduct(null)
                     }}
                   >
-                    إغلاق
+                    Close
                   </Button>
                 </div>
               </>
             ) : (
               <>
                 <DialogHeader>
-                  <DialogTitle>إتمام الطلب</DialogTitle>
+                  <DialogTitle>Complete Order</DialogTitle>
                 </DialogHeader>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div className="space-y-3">
                     <div>
-                      <label className="text-sm font-medium">الاسم</label>
+                      <label className="text-sm font-medium">Name</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.name}
                         onChange={(e) => setCustomerInfo((p) => ({ ...p, name: e.target.value }))}
-                        placeholder="الاسم الكامل"
+                        placeholder="Full name"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">واتساب</label>
+                      <label className="text-sm font-medium">WhatsApp</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.whatsapp}
@@ -241,7 +241,7 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">البريد الإلكتروني (اختياري)</label>
+                      <label className="text-sm font-medium">Email (optional)</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.email}
@@ -250,22 +250,22 @@ export default function ProductsPage() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">العنوان</label>
+                      <label className="text-sm font-medium">Address</label>
                       <input
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         value={customerInfo.address}
                         onChange={(e) => setCustomerInfo((p) => ({ ...p, address: e.target.value }))}
-                        placeholder="العنوان والتفاصيل"
+                        placeholder="Address and details"
                       />
                     </div>
                     <div>
-                      <label className="text-sm font-medium">ملاحظات</label>
+                      <label className="text-sm font-medium">Notes</label>
                       <textarea
                         className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
                         rows={3}
                         value={customerInfo.notes}
                         onChange={(e) => setCustomerInfo((p) => ({ ...p, notes: e.target.value }))}
-                        placeholder="تفاصيل إضافية"
+                        placeholder="Additional details"
                       />
                     </div>
                   </div>
@@ -273,18 +273,18 @@ export default function ProductsPage() {
                   <div className="space-y-4">
                     <div className="rounded-md border p-4">
                       <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">المنتج</span>
+                        <span className="text-sm text-muted-foreground">Product</span>
                         <span className="font-medium">{selectedProduct?.name}</span>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">السعر</span>
+                        <span className="text-sm text-muted-foreground">Price</span>
                         <span className="font-bold text-primary">
                           {selectedProduct ? formatPrice(selectedProduct.price) : "-"}
                         </span>
                       </div>
                     </div>
                     <Button onClick={handleSubmitOrder} className="w-full" size="lg" disabled={isSubmitting}>
-                      {isSubmitting ? "جاري الإرسال..." : "تأكيد الطلب"}
+                      {isSubmitting ? "Submitting..." : "Confirm Order"}
                     </Button>
                   </div>
                 </div>
@@ -310,8 +310,26 @@ export default function ProductsPage() {
           totalPrice={selectedProduct ? formatPrice(selectedProduct.price) : formatPrice(0)}
         />
       )}
-      <Footer />
+      <Footer language="en" />
     </main>
+  )
+}
+
+export default function ProductsPage() {
+  return (
+    <Suspense fallback={
+      <main className="min-h-screen bg-background" dir="ltr">
+        <Header language="en" />
+        <div className="container mx-auto px-4 py-8 md:py-12">
+          <div className="flex items-center justify-center py-24">
+            <div className="h-8 w-8 animate-spin rounded-full border-4 border-dashed border-muted-foreground" />
+          </div>
+        </div>
+        <Footer language="en" />
+      </main>
+    }>
+      <ProductsPageContent />
+    </Suspense>
   )
 }
 

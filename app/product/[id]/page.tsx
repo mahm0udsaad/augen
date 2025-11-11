@@ -15,20 +15,20 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
 
   if (!product) {
     return {
-      title: "المنتج غير موجود - أوغن",
+      title: "Product Not Found - Augen",
     }
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  const productImage = product.image.startsWith("http") ? product.image : `${siteUrl}${product.image}`
+  const productImage = product.images?.[0]?.image_url
 
   return {
-    title: `${product.name} - ${product.price} ج.م | أوغن`,
-    description: `${product.description} متوفر بلون ${product.color}. السعر: ${product.price} ج.م. للتواصل ‎+2010 35212724.`,
-    keywords: [product.name, product.style, product?.category, "نظارات", "أوغن", "مصر"],
+    title: `${product.name} - ${product.price} EGP | Augen`,
+    description: `${product.description} Available in ${product.color}. Price: ${product.price} EGP. Contact us at +2010 35212724.`,
+    keywords: [product.name, product.style, product?.category, "eyewear", "Augen", "Egypt"],
     openGraph: {
-      title: `${product.name} - أوغن`,
-      description: `${product.description} السعر: ${product.price} ج.م`,
+      title: `${product.name} - Augen`,
+      description: `${product.description} Price: ${product.price} EGP`,
       type: "website",
       images: [
         {
@@ -42,8 +42,8 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
     },
     twitter: {
       card: "summary_large_image",
-      title: `${product.name} - أوغن`,
-      description: `${product.description} السعر: ${product.price} ج.م`,
+      title: `${product.name} - Augen`,
+      description: `${product.description} Price: ${product.price} EGP`,
       images: [productImage],
     },
     alternates: {
@@ -62,9 +62,9 @@ export default async function ProductPage({ params }: ProductPageProps) {
 
   return (
     <main className="min-h-screen bg-background" style={{ viewTransitionName: `product-page-${id}` }}>
-      <Header />
+      <Header language="en" />
       <ProductDetail product={product} />
-      <Footer />
+      <Footer language="en" />
     </main>
   )
 }

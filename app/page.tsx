@@ -16,7 +16,7 @@ export const metadata: Metadata = {
     description: "Discover meticulously crafted frames that elevate your daily look.",
     images: [
       {
-        url: "/images/hero.png",
+        url: "/og.png",
         width: 1200,
         height: 630,
         alt: "Augen Eyewear Collection",
@@ -28,7 +28,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Augen – Luxury Eyewear Collections",
     description: "Discover meticulously crafted frames that elevate your daily look.",
-    images: ["/images/hero.png"],
+    images: ["/og.png"],
   },
 }
 
