@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://augen.vercel.app"),
+  metadataBase: new URL("https://augen.vercel.app"),
   alternates: {
     canonical: "/",
   },
@@ -29,7 +29,7 @@ export const metadata: Metadata = {
     siteName: "Augen",
     images: [
       {
-        url: "/og.png", // This will be resolved to absolute URL via metadataBase
+        url: "https://augen.vercel.app/og.png",
         width: 1200,
         height: 630,
         alt: "Augen – Luxury Eyewear Collections",
@@ -42,7 +42,7 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Augen – Luxury Eyewear Collections",
     description: "Discover meticulously crafted frames that elevate your daily look.",
-    images: ["/og.png"], // Fixed: removed double slash
+    images: ["https://augen.vercel.app/og.png"],
   },
   robots: {
     index: true,
@@ -58,7 +58,7 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "/images/icon.png", // Changed to relative since metadataBase is set
+    apple: "/images/icon.png", 
   },
 }
 export default function RootLayout({
