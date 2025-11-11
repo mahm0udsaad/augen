@@ -20,31 +20,31 @@ export async function generateMetadata({ params }: ProductPageProps): Promise<Me
   }
 
   const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"
-  const productImage = product.images?.[0]?.image_url
+  const productImage = product.images?.[0]?.image_url || product.image
 
   return {
     title: `${product.name} - ${product.price} EGP | Augen`,
-    description: `${product.description} Available in ${product.color}. Price: ${product.price} EGP. Contact us at +2010 35212724.`,
-    keywords: [product.name, product.style, product?.category, "eyewear", "Augen", "Egypt"],
+    description: `${product.name} eyewear from Augen. Available in ${product.subcategory}. Price: ${product.price} EGP. Contact us at +2010 35212724.`,
+    keywords: [product.name, product.subcategory, product.parent_category, "eyewear", "Augen", "Egypt"],
     openGraph: {
       title: `${product.name} - Augen`,
-      description: `${product.description} Price: ${product.price} EGP`,
+      description: `${product.name} - Price: ${product.price} EGP`,
       type: "website",
-      images: [
+      images: productImage ? [
         {
           url: productImage,
           width: 1200,
           height: 1200,
           alt: product.name,
         },
-      ],
+      ] : [],
       siteName: "Augen",
     },
     twitter: {
       card: "summary_large_image",
       title: `${product.name} - Augen`,
-      description: `${product.description} Price: ${product.price} EGP`,
-      images: [productImage],
+      description: `${product.name} - Price: ${product.price} EGP`,
+      images: productImage ? [productImage] : [],
     },
     alternates: {
       canonical: `/product/${id}`,

@@ -18,7 +18,7 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "http://localhost:3000"),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://augen.vercel.app"),
   alternates: {
     canonical: "/",
   },
@@ -60,7 +60,7 @@ export const metadata: Metadata = {
     shortcut: "/favicon.ico",
     apple: "https://augen.vercel.app/images/icon.png",
   },
-}
+} // TODO: Change to false when we have a lot of pages
 
 export default function RootLayout({
   children,
