@@ -25,11 +25,11 @@ export const metadata: Metadata = {
   openGraph: {
     title: "Augen – Luxury Eyewear Collections",
     description: "Discover meticulously crafted frames that elevate your daily look.",
-    url: "/",
+    url: "https://augen.vercel.app",
     siteName: "Augen",
     images: [
       {
-        url: "https://augen.vercel.app/og.png",
+        url: "/og.png", // This will be resolved to absolute URL via metadataBase
         width: 1200,
         height: 630,
         alt: "Augen – Luxury Eyewear Collections",
@@ -42,11 +42,11 @@ export const metadata: Metadata = {
     card: "summary_large_image",
     title: "Augen – Luxury Eyewear Collections",
     description: "Discover meticulously crafted frames that elevate your daily look.",
-    images: ["https://augen.vercel.app/og.png"],
+    images: ["/og.png"], // Fixed: removed double slash
   },
   robots: {
     index: true,
-    follow: true, // TODO: Change to false when we have a lot of pages
+    follow: true,
     googleBot: {
       index: true,
       follow: true,
@@ -58,10 +58,9 @@ export const metadata: Metadata = {
   icons: {
     icon: "/favicon.ico",
     shortcut: "/favicon.ico",
-    apple: "https://augen.vercel.app/images/icon.png",
+    apple: "/images/icon.png", // Changed to relative since metadataBase is set
   },
-} // TODO: Change to false when we have a lot of pages
-
+}
 export default function RootLayout({
   children,
 }: Readonly<{

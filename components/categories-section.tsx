@@ -178,12 +178,13 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                       )}
                     </div>
 
-                    <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-3 rounded-lg group-hover:scale-110 transition-transform duration-300">
+                    <div className="absolute top-4 right-4 p-3 rounded-lg group-hover:scale-110 transition-transform duration-300">
                       <Image 
                         src="/images/icon.png" 
                         alt="Augen" 
-                        width={32} 
-                        height={32}
+                        width={50} 
+                        height={50}
+                        className="filter brightness-0 invert"
                       />
                     </div>
 
