@@ -265,7 +265,7 @@ export default function CheckoutBottomSheet({
                       }
                     />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="z-[70]" position="popper">
                     {shippingCities.map((city) => (
                       <SelectItem key={city.id} value={city.id}>
                         <div className="flex flex-col text-start">

@@ -33,7 +33,10 @@ export default function AdminHeader() {
         </div>
         
         {/* Navigation */}
-        <nav className="flex gap-2 overflow-x-auto">
+        <nav
+          className="flex gap-16 overflow-x-auto flex-nowrap pb-2 -mx-4 px-4 snap-x snap-mandatory"
+          aria-label="أقسام لوحة التحكم"
+        >
           {navItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href
@@ -42,10 +45,10 @@ export default function AdminHeader() {
                 <Button
                   variant={isActive ? "default" : "ghost"}
                   size="sm"
-                  className="flex items-center gap-2 whitespace-nowrap"
+                  className="flex items-center gap-2 whitespace-nowrap flex-shrink-0 snap-start"
                 >
                   <span>{item.label}</span>
-                  <Icon className="w-4 h-4" />
+                  <Icon className="sm:size-3 size-4" />
                 </Button>
               </Link>
             )
