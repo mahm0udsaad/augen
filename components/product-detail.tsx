@@ -14,6 +14,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import CheckoutBottomSheet from "@/components/checkout-bottom-sheet"
 import { toast } from "sonner"
+import { useShippingCities } from "@/hooks/use-shipping-cities"
 
 interface ProductDetailProps {
   product: Product
@@ -40,8 +41,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     email: "",
     address: "",
     notes: "",
+    shippingCityId: "",
   })
   const CUSTOMER_INFO_STORAGE_KEY = "augen_checkout_info"
+  const {
+    cities: shippingCities,
+    isLoading: isLoadingShippingCities,
+  } = useShippingCities()
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -55,7 +61,11 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       const stored = localStorage.getItem(CUSTOMER_INFO_STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
-        setCustomerInfo((prev) => ({ ...prev, ...parsed }))
+        setCustomerInfo((prev) => ({
+          ...prev,
+          ...parsed,
+          shippingCityId: parsed.shippingCityId || prev.shippingCityId || "",
+        }))
       }
     } catch {
       // ignore
@@ -69,6 +79,20 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       // ignore
     }
   }, [customerInfo])
+
+  useEffect(() => {
+    if (!isLoadingShippingCities && shippingCities.length > 0) {
+      setCustomerInfo((prev) => {
+        if (
+          prev.shippingCityId &&
+          shippingCities.some((city) => city.id === prev.shippingCityId)
+        ) {
+          return prev
+        }
+        return { ...prev, shippingCityId: shippingCities[0].id }
+      })
+    }
+  }, [isLoadingShippingCities, shippingCities])
 
   const handleAddToCart = () => {
     if (availableQuantity <= 0) {
@@ -102,6 +126,10 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       toast.error("Please enter your name and WhatsApp number")
       return
     }
+    if (!customerInfo.shippingCityId) {
+      toast.error("Please select a shipping city")
+      return
+    }
     const whatsappRegex = /^[+]?[0-9]{10,15}$/
     if (!whatsappRegex.test(customerInfo.whatsapp.replace(/\s/g, ""))) {
       toast.error("Invalid WhatsApp number")
@@ -119,6 +147,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           customerEmail: customerInfo.email,
           customerAddress: customerInfo.address,
           notes: customerInfo.notes,
+          shippingCityId: customerInfo.shippingCityId,
           items: [
             {
               productId: product.id,
@@ -144,6 +173,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       setIsSubmitting(false)
     }
   }
+
+  const selectedShippingCity = shippingCities.find(
+    (city) => city.id === customerInfo.shippingCityId
+  )
+  const shippingFee = selectedShippingCity?.shipping_fee ?? 0
+  const itemsTotal = product.price * quantity
+  const totalWithShipping = itemsTotal + shippingFee
 
   const relatedItems = []
 
@@ -568,44 +604,86 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                         placeholder="Address and details"
                       />
                     </div>
-                    <div>
-                      <label className="text-sm font-medium">Notes</label>
-                      <textarea
-                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
-                        rows={3}
-                        value={customerInfo.notes}
-                        onChange={(e) => setCustomerInfo((p) => ({ ...p, notes: e.target.value }))}
-                        placeholder="Additional details"
-                      />
-                    </div>
+                  <div>
+                    <label className="text-sm font-medium">Notes</label>
+                    <textarea
+                      className="mt-1 w-full rounded-md border px-3 py-2 text-sm"
+                      rows={3}
+                      value={customerInfo.notes}
+                      onChange={(e) => setCustomerInfo((p) => ({ ...p, notes: e.target.value }))}
+                      placeholder="Additional details"
+                    />
                   </div>
-
-                  <div className="space-y-4">
-                    <div className="rounded-md border p-4">
-                      <div className="flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Product</span>
-                        <span className="font-medium">{product.name}</span>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Quantity</span>
-                        <span className="font-medium">{quantity}</span>
-                      </div>
-                      <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Total</span>
-                        <span className="font-bold text-primary">
-                          {formatPrice(product.price * quantity)}
-                        </span>
-                      </div>
-                    </div>
-                    <button
-                      onClick={handleSubmitOrder}
-                      className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground font-semibold"
-                      disabled={isSubmitting}
+                  <div>
+                    <label className="text-sm font-medium">
+                      Shipping City <span className="text-red-500">*</span>
+                    </label>
+                    <select
+                      className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-background"
+                      value={customerInfo.shippingCityId}
+                      onChange={(e) =>
+                        setCustomerInfo((p) => ({ ...p, shippingCityId: e.target.value }))
+                      }
+                      disabled={isLoadingShippingCities || shippingCities.length === 0}
                     >
-                      {isSubmitting ? "Submitting..." : "Confirm Order"}
-                    </button>
+                      {shippingCities.length === 0 ? (
+                        <option value="">No shipping cities available</option>
+                      ) : (
+                        shippingCities.map((city) => (
+                          <option key={city.id} value={city.id}>
+                            {city.name_en} - {formatPrice(city.shipping_fee)}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Shipping fee: {formatPrice(shippingFee)}
+                    </p>
                   </div>
                 </div>
+
+                <div className="space-y-4">
+                  <div className="rounded-md border p-4">
+                    <div className="flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Product</span>
+                      <span className="font-medium">{product.name}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Quantity</span>
+                      <span className="font-medium">{quantity}</span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Items Total</span>
+                      <span className="font-semibold">
+                        {formatPrice(itemsTotal)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between">
+                      <span className="text-sm text-muted-foreground">Shipping</span>
+                      <span className="font-semibold">
+                        {formatPrice(shippingFee)}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between pt-2 border-t">
+                      <span className="text-sm font-semibold">Grand Total</span>
+                      <span className="font-bold text-primary">
+                        {formatPrice(totalWithShipping)}
+                      </span>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSubmitOrder}
+                    className="w-full px-4 py-3 rounded-md bg-primary text-primary-foreground font-semibold"
+                    disabled={
+                      isSubmitting ||
+                      !customerInfo.shippingCityId ||
+                      shippingCities.length === 0
+                    }
+                  >
+                    {isSubmitting ? "Submitting..." : "Confirm Order"}
+                  </button>
+                </div>
+              </div>
               </>
             )}
           </DialogContent>
@@ -625,7 +703,17 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           isSubmitting={isSubmitting}
           isOrderSubmitted={isOrderSubmitted}
           orderNumber={orderNumber}
-          totalPrice={formatPrice(product.price * quantity)}
+          shippingCities={shippingCities}
+          selectedShippingCityId={customerInfo.shippingCityId}
+          onShippingCityChange={(cityId) =>
+            setCustomerInfo((prev) => ({ ...prev, shippingCityId: cityId }))
+          }
+          isLoadingShippingCities={isLoadingShippingCities}
+          totals={{
+            items: formatPrice(itemsTotal),
+            shipping: formatPrice(shippingFee),
+            grand: formatPrice(totalWithShipping),
+          }}
         />
       )}
     </section>

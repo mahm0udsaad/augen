@@ -13,6 +13,7 @@ import Link from 'next/link';
 import Header from '@/components/header';
 import CheckoutBottomSheet from '@/components/checkout-bottom-sheet';
 import { useMediaQuery } from '@/hooks/use-media-query';
+import { useShippingCities } from '@/hooks/use-shipping-cities';
 
 const CUSTOMER_INFO_STORAGE_KEY = 'augen_checkout_info';
 
@@ -23,6 +24,10 @@ export default function CartPage() {
   const [orderNumber, setOrderNumber] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const isDesktop = useMediaQuery('(min-width: 768px)');
+  const {
+    cities: shippingCities,
+    isLoading: isLoadingShippingCities,
+  } = useShippingCities();
 
   const [customerInfo, setCustomerInfo] = useState({
     name: '',
@@ -30,6 +35,7 @@ export default function CartPage() {
     email: '',
     address: '',
     notes: '',
+    shippingCityId: '',
   });
 
   useEffect(() => {
@@ -37,7 +43,11 @@ export default function CartPage() {
       const storedInfo = localStorage.getItem(CUSTOMER_INFO_STORAGE_KEY);
       if (storedInfo) {
         const parsed = JSON.parse(storedInfo);
-        setCustomerInfo((prev) => ({ ...prev, ...parsed }));
+        setCustomerInfo((prev) => ({
+          ...prev,
+          ...parsed,
+          shippingCityId: parsed.shippingCityId || prev.shippingCityId || '',
+        }));
       }
     } catch (error) {
       console.error('Error loading checkout info:', error);
@@ -52,6 +62,20 @@ export default function CartPage() {
     }
   }, [customerInfo]);
 
+  useEffect(() => {
+    if (!isLoadingShippingCities && shippingCities.length > 0) {
+      setCustomerInfo((prev) => {
+        if (
+          prev.shippingCityId &&
+          shippingCities.some((city) => city.id === prev.shippingCityId)
+        ) {
+          return prev;
+        }
+        return { ...prev, shippingCityId: shippingCities[0].id };
+      });
+    }
+  }, [isLoadingShippingCities, shippingCities]);
+
   const handleCheckout = () => {
     if (items.length === 0) {
       toast.error('Cart is empty');
@@ -60,9 +84,20 @@ export default function CartPage() {
     setIsCheckoutOpen(true);
   };
 
+  const cartSubtotal = getTotalPrice();
+  const selectedShippingCity = shippingCities.find(
+    (city) => city.id === customerInfo.shippingCityId
+  );
+  const shippingFee = selectedShippingCity?.shipping_fee ?? 0;
+  const grandTotal = cartSubtotal + shippingFee;
+
   const handleSubmitOrder = async () => {
     if (!customerInfo.name || !customerInfo.whatsapp) {
       toast.error('Please enter your name and WhatsApp number');
+      return;
+    }
+    if (!customerInfo.shippingCityId) {
+      toast.error('Please select a shipping city');
       return;
     }
 
@@ -87,6 +122,7 @@ export default function CartPage() {
           customerEmail: customerInfo.email,
           customerAddress: customerInfo.address,
           notes: customerInfo.notes,
+          shippingCityId: customerInfo.shippingCityId,
           items: items.map((item) => ({
             productId: item.productId,
             productName: item.productName,
@@ -249,17 +285,32 @@ export default function CartPage() {
                 <div className="space-y-3 mb-6">
                   <div className="flex justify-between text-sm sm:text-base">
                     <span className="text-muted-foreground">Subtotal:</span>
-                    <span className="font-semibold">{formatPrice(getTotalPrice())}</span>
+                    <span className="font-semibold">{formatPrice(cartSubtotal)}</span>
                   </div>
                   <div className="flex justify-between text-sm sm:text-base">
                     <span className="text-muted-foreground">Items:</span>
                     <span className="font-semibold">{items.length}</span>
                   </div>
+                  <div className="flex justify-between text-sm sm:text-base">
+                    <span className="text-muted-foreground">Shipping:</span>
+                    <span className="font-semibold">
+                      {customerInfo.shippingCityId && shippingCities.length > 0
+                        ? formatPrice(shippingFee)
+                        : 'Select at checkout'}
+                    </span>
+                  </div>
                   <div className="border-t pt-3">
                     <div className="flex justify-between text-base sm:text-lg font-bold">
                       <span>Total:</span>
-                      <span className="text-primary">{formatPrice(getTotalPrice())}</span>
+                      <span className="text-primary">
+                        {customerInfo.shippingCityId && shippingCities.length > 0
+                          ? formatPrice(grandTotal)
+                          : formatPrice(cartSubtotal)}
+                      </span>
                     </div>
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Shipping fees depend on the selected city during checkout.
+                    </p>
                   </div>
                 </div>
                 <Button onClick={handleCheckout} className="w-full" size="lg">
@@ -391,16 +442,57 @@ export default function CartPage() {
                     />
                   </div>
 
+                  <div className="space-y-2">
+                    <Label>
+                      Shipping City <span className="text-destructive">*</span>
+                    </Label>
+                    <select
+                      className="w-full rounded-md border px-3 py-2 min-h-[48px]"
+                      value={customerInfo.shippingCityId}
+                      onChange={(e) =>
+                        setCustomerInfo({ ...customerInfo, shippingCityId: e.target.value })
+                      }
+                      disabled={isLoadingShippingCities || shippingCities.length === 0}
+                    >
+                      {shippingCities.length === 0 ? (
+                        <option value="">No shipping cities available</option>
+                      ) : (
+                        shippingCities.map((city) => (
+                          <option key={city.id} value={city.id}>
+                            {city.name_en} - {formatPrice(city.shipping_fee)}
+                          </option>
+                        ))
+                      )}
+                    </select>
+                    <p className="text-xs text-muted-foreground">
+                      Shipping fee: {formatPrice(shippingFee)}
+                    </p>
+                  </div>
+
                   <div className="border-t pt-4">
-                    <div className="flex justify-between text-lg font-bold mb-4">
-                      <span>Total:</span>
-                      <span className="text-primary">{formatPrice(getTotalPrice())}</span>
+                    <div className="space-y-2 text-sm mb-4">
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Items Subtotal</span>
+                        <span className="font-semibold">{formatPrice(cartSubtotal)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Shipping</span>
+                        <span className="font-semibold">{formatPrice(shippingFee)}</span>
+                      </div>
+                      <div className="flex justify-between text-lg font-bold pt-1">
+                        <span>Total</span>
+                        <span className="text-primary">{formatPrice(grandTotal)}</span>
+                      </div>
                     </div>
                     <Button
                       onClick={handleSubmitOrder}
                       className="w-full"
                       size="lg"
-                      disabled={isSubmitting}
+                      disabled={
+                        isSubmitting ||
+                        !customerInfo.shippingCityId ||
+                        shippingCities.length === 0
+                      }
                     >
                       {isSubmitting ? 'Submitting...' : 'Confirm Order'}
                     </Button>
@@ -425,7 +517,17 @@ export default function CartPage() {
           isSubmitting={isSubmitting}
           isOrderSubmitted={isOrderSubmitted}
           orderNumber={orderNumber}
-          totalPrice={formatPrice(getTotalPrice())}
+          shippingCities={shippingCities}
+          selectedShippingCityId={customerInfo.shippingCityId}
+          onShippingCityChange={(cityId) =>
+            setCustomerInfo((prev) => ({ ...prev, shippingCityId: cityId }))
+          }
+          isLoadingShippingCities={isLoadingShippingCities}
+          totals={{
+            items: formatPrice(cartSubtotal),
+            shipping: formatPrice(shippingFee),
+            grand: formatPrice(grandTotal),
+          }}
         />
       )}
     </>

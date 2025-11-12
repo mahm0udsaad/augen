@@ -11,6 +11,12 @@ export async function GET(request: NextRequest) {
       .from('orders')
       .select(`
         *,
+        shipping_city:shipping_cities (
+          id,
+          name_en,
+          name_ar,
+          shipping_fee
+        ),
         order_items (
           *,
           products (
@@ -57,10 +63,17 @@ export async function POST(request: NextRequest) {
       customerAddress,
       items,
       notes,
+      shippingCityId,
     } = body;
 
     // Validate required fields
-    if (!customerName || !customerWhatsapp || !items || items.length === 0) {
+    if (
+      !customerName ||
+      !customerWhatsapp ||
+      !items ||
+      items.length === 0 ||
+      !shippingCityId
+    ) {
       return NextResponse.json(
         { error: 'بعض الحقول الإلزامية مفقودة' },
         { status: 400 }
@@ -99,11 +112,29 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    // Calculate total amount
-    const totalAmount = items.reduce(
+    // Calculate items total amount
+    const itemsTotalAmount = items.reduce(
       (sum: number, item: any) => sum + item.unitPrice * item.quantity,
       0
     );
+
+    // Validate shipping city and determine fee
+    const { data: shippingCity, error: shippingCityError } = await supabase
+      .from('shipping_cities')
+      .select('id, shipping_fee, is_active')
+      .eq('id', shippingCityId)
+      .eq('is_active', true)
+      .single();
+
+    if (shippingCityError || !shippingCity || shippingCity.is_active === false) {
+      return NextResponse.json(
+        { error: 'المدينة المحددة للشحن غير صالحة' },
+        { status: 400 }
+      );
+    }
+
+    const shippingFee = Number(shippingCity.shipping_fee) || 0;
+    const totalAmount = itemsTotalAmount + shippingFee;
 
     // Generate order number
     const { data: orderNumberData, error: orderNumberError } = await supabase
@@ -127,6 +158,9 @@ export async function POST(request: NextRequest) {
         customer_email: customerEmail,
         customer_address: customerAddress,
         total_amount: totalAmount,
+        items_total_amount: itemsTotalAmount,
+        shipping_fee: shippingFee,
+        shipping_city_id: shippingCityId,
         notes: notes,
         status: 'pending',
       })

@@ -7,7 +7,20 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select"
+import type { ShippingCity } from "@/types/shipping"
 import Link from "next/link"
+
+const egpFormatter = new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "EGP",
+})
 
 interface CheckoutBottomSheetProps {
   isOpen: boolean
@@ -18,13 +31,22 @@ interface CheckoutBottomSheetProps {
     email: string
     address: string
     notes: string
+    shippingCityId?: string
   }
   onCustomerInfoChange: (info: any) => void
   onSubmitOrder: () => void
   isSubmitting: boolean
   isOrderSubmitted: boolean
   orderNumber: string
-  totalPrice: string
+  shippingCities: ShippingCity[]
+  selectedShippingCityId?: string
+  onShippingCityChange: (cityId: string) => void
+  isLoadingShippingCities?: boolean
+  totals: {
+    items: string
+    shipping: string
+    grand: string
+  }
 }
 
 export default function CheckoutBottomSheet({
@@ -36,7 +58,11 @@ export default function CheckoutBottomSheet({
   isSubmitting,
   isOrderSubmitted,
   orderNumber,
-  totalPrice,
+  shippingCities,
+  selectedShippingCityId,
+  onShippingCityChange,
+  isLoadingShippingCities = false,
+  totals,
 }: CheckoutBottomSheetProps) {
   const [isAnimating, setIsAnimating] = useState(false)
   const [mounted, setMounted] = useState(false)
@@ -66,6 +92,9 @@ export default function CheckoutBottomSheet({
   }, [isOpen])
 
   if (!mounted || (!isOpen && !isAnimating)) return null
+
+  const shippingSelectionDisabled =
+    isLoadingShippingCities || shippingCities.length === 0
 
   const sheet = (
     <>
@@ -218,16 +247,71 @@ export default function CheckoutBottomSheet({
                 />
               </div>
 
+              <div className="space-y-2">
+                <Label className="text-base">
+                  Shipping City <span className="text-destructive">*</span>
+                </Label>
+                <Select
+                  value={selectedShippingCityId}
+                  onValueChange={onShippingCityChange}
+                  disabled={shippingSelectionDisabled}
+                >
+                  <SelectTrigger className="min-h-[48px] text-base">
+                    <SelectValue
+                      placeholder={
+                        shippingSelectionDisabled
+                          ? "Shipping unavailable"
+                          : "Select your city"
+                      }
+                    />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {shippingCities.map((city) => (
+                      <SelectItem key={city.id} value={city.id}>
+                        <div className="flex flex-col text-start">
+                          <span className="font-medium">{city.name_en}</span>
+                          <span className="text-xs text-muted-foreground">
+                            {(city.name_ar || '').trim() || city.name_en} • {egpFormatter.format(city.shipping_fee)}
+                          </span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-xs text-muted-foreground">
+                  Shipping fees vary by city and are added to your total
+                </p>
+                {shippingSelectionDisabled && (
+                  <p className="text-xs text-destructive">
+                    Shipping options are unavailable right now. Please try again later.
+                  </p>
+                )}
+              </div>
+
               <div className="border-t pt-4 mt-6 space-y-4">
-                <div className="flex justify-between text-lg font-bold">
-                  <span>Total:</span>
-                  <span className="text-primary">{totalPrice}</span>
+                <div className="space-y-2 text-sm">
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Items Subtotal</span>
+                    <span className="font-semibold">{totals.items}</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Shipping Fee</span>
+                    <span className="font-semibold">{totals.shipping}</span>
+                  </div>
+                  <div className="flex justify-between text-lg font-bold pt-1">
+                    <span>Total</span>
+                    <span className="text-primary">{totals.grand}</span>
+                  </div>
                 </div>
                 <Button
                   onClick={onSubmitOrder}
                   className="w-full min-h-[52px] text-base"
                   size="lg"
-                  disabled={isSubmitting}
+                  disabled={
+                    isSubmitting ||
+                    shippingSelectionDisabled ||
+                    !selectedShippingCityId
+                  }
                 >
                   {isSubmitting ? "Submitting..." : "Confirm Order"}
                 </Button>
@@ -241,4 +325,3 @@ export default function CheckoutBottomSheet({
 
   return createPortal(sheet, document.body)
 }
-

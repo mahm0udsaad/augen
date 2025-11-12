@@ -2,7 +2,7 @@
 
 import { useAdminAuth } from "@/hooks/use-admin-auth"
 import { Button } from "@/components/ui/button"
-import { LogOut, LayoutDashboard, Package, Tags, Layers, ShoppingBag } from "lucide-react"
+import { LogOut, LayoutDashboard, Package, Tags, Layers, ShoppingBag, Truck } from "lucide-react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
@@ -16,6 +16,7 @@ export default function AdminHeader() {
     { href: "/admin/products", label: "المنتجات", icon: Package },
     { href: "/admin/slider", label: "إدارة الشرائح", icon: Layers },
     { href: "/admin/category-displays", label: "عرض التصنيفات", icon: Tags },
+    { href: "/admin/shipping", label: "تكاليف الشحن", icon: Truck },
   ]
 
   return (

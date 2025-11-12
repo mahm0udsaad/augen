@@ -33,6 +33,13 @@ interface OrderItem {
   total_price: number;
 }
 
+interface ShippingCityRef {
+  id: string;
+  name_en: string;
+  name_ar?: string;
+  shipping_fee: number;
+}
+
 interface Order {
   id: string;
   order_number: string;
@@ -42,6 +49,10 @@ interface Order {
   customer_address?: string;
   status: string;
   total_amount: number;
+  items_total_amount: number;
+  shipping_fee: number;
+  shipping_city_id?: string | null;
+  shipping_city?: ShippingCityRef | null;
   notes?: string;
   created_at: string;
   updated_at: string;
@@ -87,6 +98,25 @@ export default function AdminOrdersPage() {
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
 
+  const normalizeOrder = (order: any): Order => ({
+    ...order,
+    total_amount: Number(order.total_amount) || 0,
+    items_total_amount:
+      Number(order.items_total_amount ?? order.total_amount) || 0,
+    shipping_fee: Number(order.shipping_fee) || 0,
+    order_items: (order.order_items || []).map((item: any) => ({
+      ...item,
+      unit_price: Number(item.unit_price) || 0,
+      total_price: Number(item.total_price) || 0,
+    })),
+    shipping_city: order.shipping_city
+      ? {
+          ...order.shipping_city,
+          shipping_fee: Number(order.shipping_city.shipping_fee) || 0,
+        }
+      : null,
+  })
+
   useEffect(() => {
     if (!authLoading && !isAuthed) {
       router.push('/admin/login');
@@ -110,7 +140,10 @@ export default function AdminOrdersPage() {
       const data = await response.json();
 
       if (response.ok) {
-        setOrders(data.orders || []);
+        const normalized = (data.orders || []).map((order: any) =>
+          normalizeOrder(order)
+        );
+        setOrders(normalized);
       } else {
         toast.error('فشل في تحميل الطلبات');
       }
@@ -133,12 +166,13 @@ export default function AdminOrdersPage() {
         body: JSON.stringify({ status: newStatus }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
         toast.success('تم تحديث حالة الطلب');
         fetchOrders();
-        if (selectedOrder?.id === orderId) {
-          const data = await response.json();
-          setSelectedOrder(data.order);
+        if (selectedOrder?.id === orderId && data.order) {
+          setSelectedOrder(normalizeOrder(data.order));
         }
       } else {
         toast.error('فشل تحديث حالة الطلب');
@@ -184,11 +218,12 @@ export default function AdminOrdersPage() {
     );
   });
 
-  const formatPrice = (price: number) => {
+  const formatPrice = (price: number | string) => {
+    const numericPrice = typeof price === 'number' ? price : Number(price)
     return new Intl.NumberFormat('ar-EG', {
       style: 'currency',
       currency: 'EGP',
-    }).format(price);
+    }).format(Number.isNaN(numericPrice) ? 0 : numericPrice);
   };
 
   const formatDate = (dateString: string) => {
@@ -299,6 +334,13 @@ export default function AdminOrdersPage() {
                           <span className="font-semibold">المنتجات:</span>{' '}
                           {order.order_items?.length || 0}
                         </p>
+                        {order.shipping_city && (
+                          <p>
+                            <span className="font-semibold">مدينة الشحن:</span>{' '}
+                            {(order.shipping_city.name_ar || order.shipping_city.name_en) ?? '-'}
+                            {' '}- {formatPrice(order.shipping_fee)}
+                          </p>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col md:items-end gap-3">
@@ -379,6 +421,23 @@ export default function AdminOrdersPage() {
                   </div>
                 </div>
 
+                {selectedOrder.shipping_city && (
+                  <div className="bg-secondary p-4 rounded-lg">
+                    <h3 className="font-bold text-lg mb-3">تفاصيل الشحن</h3>
+                    <div className="grid md:grid-cols-2 gap-3 text-sm">
+                      <div>
+                        <span className="font-semibold">المدينة:</span>{' '}
+                        {(selectedOrder.shipping_city.name_ar ||
+                          selectedOrder.shipping_city.name_en) ?? '-'}
+                      </div>
+                      <div>
+                        <span className="font-semibold">رسوم الشحن:</span>{' '}
+                        {formatPrice(selectedOrder.shipping_fee)}
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Order Status */}
                 <div>
                   <h3 className="font-bold text-lg mb-3">حالة الطلب</h3>
@@ -443,11 +502,25 @@ export default function AdminOrdersPage() {
 
                 {/* Total */}
                 <div className="border-t pt-4">
-                  <div className="flex justify-between items-center text-xl font-bold">
-                    <span>المجموع الكلي:</span>
-                    <span className="text-primary">
-                      {formatPrice(selectedOrder.total_amount)}
-                    </span>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">إجمالي المنتجات</span>
+                      <span className="font-semibold">
+                        {formatPrice(selectedOrder.items_total_amount)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">رسوم الشحن</span>
+                      <span className="font-semibold">
+                        {formatPrice(selectedOrder.shipping_fee)}
+                      </span>
+                    </div>
+                    <div className="flex justify-between items-center text-xl font-bold pt-1">
+                      <span>المجموع الكلي:</span>
+                      <span className="text-primary">
+                        {formatPrice(selectedOrder.total_amount)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 

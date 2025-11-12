@@ -13,6 +13,12 @@ export async function GET(
       .from('orders')
       .select(`
         *,
+        shipping_city:shipping_cities (
+          id,
+          name_en,
+          name_ar,
+          shipping_fee
+        ),
         order_items (
           *,
           products (
@@ -60,7 +66,22 @@ export async function PATCH(
       .from('orders')
       .update(updateData)
       .eq('id', id)
-      .select()
+      .select(`
+        *,
+        shipping_city:shipping_cities (
+          id,
+          name_en,
+          name_ar,
+          shipping_fee
+        ),
+        order_items (
+          *,
+          products (
+            name,
+            image
+          )
+        )
+      `)
       .single();
 
     if (error) {

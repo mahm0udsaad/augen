@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import CheckoutBottomSheet from "@/components/checkout-bottom-sheet"
 import { useMediaQuery } from "@/hooks/use-media-query"
+import { useShippingCities } from "@/hooks/use-shipping-cities"
 import type { Product } from "@/lib/products"
 import { getAllProducts } from "@/lib/product-service"
 import type { ParentCategory, Subcategory } from "@/lib/constants"
@@ -28,6 +29,10 @@ function ProductsPageContent() {
   const [orderNumber, setOrderNumber] = useState("")
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+  const {
+    cities: shippingCities,
+    isLoading: isLoadingShippingCities,
+  } = useShippingCities()
 
   const [customerInfo, setCustomerInfo] = useState({
     name: "",
@@ -35,6 +40,7 @@ function ProductsPageContent() {
     email: "",
     address: "",
     notes: "",
+    shippingCityId: "",
   })
 
   useEffect(() => {
@@ -57,7 +63,11 @@ function ProductsPageContent() {
       const stored = localStorage.getItem(CUSTOMER_INFO_STORAGE_KEY)
       if (stored) {
         const parsed = JSON.parse(stored)
-        setCustomerInfo((prev) => ({ ...prev, ...parsed }))
+        setCustomerInfo((prev) => ({
+          ...prev,
+          ...parsed,
+          shippingCityId: parsed.shippingCityId || prev.shippingCityId || "",
+        }))
       }
     } catch {
       // ignore
@@ -71,6 +81,20 @@ function ProductsPageContent() {
       // ignore
     }
   }, [customerInfo])
+
+  useEffect(() => {
+    if (!isLoadingShippingCities && shippingCities.length > 0) {
+      setCustomerInfo((prev) => {
+        if (
+          prev.shippingCityId &&
+          shippingCities.some((city) => city.id === prev.shippingCityId)
+        ) {
+          return prev
+        }
+        return { ...prev, shippingCityId: shippingCities[0].id }
+      })
+    }
+  }, [isLoadingShippingCities, shippingCities])
 
   const parentFilter = (searchParams.get("parent") as ParentCategory | null) ?? null
   const subFilter = (searchParams.get("sub") as Subcategory | null) ?? null
@@ -91,10 +115,21 @@ function ProductsPageContent() {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP" }).format(price)
 
+  const selectedShippingCity = shippingCities.find(
+    (city) => city.id === customerInfo.shippingCityId
+  )
+  const shippingFee = selectedShippingCity?.shipping_fee ?? 0
+  const itemsTotal = selectedProduct ? selectedProduct.price : 0
+  const totalWithShipping = itemsTotal + shippingFee
+
   const handleSubmitOrder = async () => {
     if (!selectedProduct) return
     if (!customerInfo.name || !customerInfo.whatsapp) {
       toast.error("Please enter your name and WhatsApp number")
+      return
+    }
+    if (!customerInfo.shippingCityId) {
+      toast.error("Please select a shipping city")
       return
     }
     const whatsappRegex = /^[+]?[0-9]{10,15}$/
@@ -114,6 +149,7 @@ function ProductsPageContent() {
           customerEmail: customerInfo.email,
           customerAddress: customerInfo.address,
           notes: customerInfo.notes,
+          shippingCityId: customerInfo.shippingCityId,
           items: [
             {
               productId: selectedProduct.id,
@@ -268,6 +304,32 @@ function ProductsPageContent() {
                         placeholder="Additional details"
                       />
                     </div>
+                    <div>
+                      <label className="text-sm font-medium">
+                        Shipping City <span className="text-red-500">*</span>
+                      </label>
+                      <select
+                        className="mt-1 w-full rounded-md border px-3 py-2 text-sm bg-background"
+                        value={customerInfo.shippingCityId}
+                        onChange={(e) =>
+                          setCustomerInfo((p) => ({ ...p, shippingCityId: e.target.value }))
+                        }
+                        disabled={isLoadingShippingCities || shippingCities.length === 0}
+                      >
+                        {shippingCities.length === 0 ? (
+                          <option value="">No shipping cities available</option>
+                        ) : (
+                          shippingCities.map((city) => (
+                            <option key={city.id} value={city.id}>
+                              {city.name_en} - {formatPrice(city.shipping_fee)}
+                            </option>
+                          ))
+                        )}
+                      </select>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Shipping fee: {formatPrice(shippingFee)}
+                      </p>
+                    </div>
                   </div>
 
                   <div className="space-y-4">
@@ -277,13 +339,32 @@ function ProductsPageContent() {
                         <span className="font-medium">{selectedProduct?.name}</span>
                       </div>
                       <div className="mt-2 flex items-center justify-between">
-                        <span className="text-sm text-muted-foreground">Price</span>
-                        <span className="font-bold text-primary">
+                        <span className="text-sm text-muted-foreground">Items Total</span>
+                        <span className="font-semibold">
                           {selectedProduct ? formatPrice(selectedProduct.price) : "-"}
                         </span>
                       </div>
+                      <div className="mt-2 flex items-center justify-between">
+                        <span className="text-sm text-muted-foreground">Shipping</span>
+                        <span className="font-semibold">{formatPrice(shippingFee)}</span>
+                      </div>
+                      <div className="mt-2 flex items-center justify-between pt-2 border-t">
+                        <span className="text-sm font-semibold">Grand Total</span>
+                        <span className="font-bold text-primary">
+                          {formatPrice(totalWithShipping)}
+                        </span>
+                      </div>
                     </div>
-                    <Button onClick={handleSubmitOrder} className="w-full" size="lg" disabled={isSubmitting}>
+                    <Button
+                      onClick={handleSubmitOrder}
+                      className="w-full"
+                      size="lg"
+                      disabled={
+                        isSubmitting ||
+                        !customerInfo.shippingCityId ||
+                        shippingCities.length === 0
+                      }
+                    >
                       {isSubmitting ? "Submitting..." : "Confirm Order"}
                     </Button>
                   </div>
@@ -307,7 +388,17 @@ function ProductsPageContent() {
           isSubmitting={isSubmitting}
           isOrderSubmitted={isOrderSubmitted}
           orderNumber={orderNumber}
-          totalPrice={selectedProduct ? formatPrice(selectedProduct.price) : formatPrice(0)}
+          shippingCities={shippingCities}
+          selectedShippingCityId={customerInfo.shippingCityId}
+          onShippingCityChange={(cityId) =>
+            setCustomerInfo((prev) => ({ ...prev, shippingCityId: cityId }))
+          }
+          isLoadingShippingCities={isLoadingShippingCities}
+          totals={{
+            items: formatPrice(itemsTotal),
+            shipping: formatPrice(shippingFee),
+            grand: formatPrice(totalWithShipping),
+          }}
         />
       )}
       <Footer language="en" />
@@ -332,5 +423,3 @@ export default function ProductsPage() {
     </Suspense>
   )
 }
-
-
