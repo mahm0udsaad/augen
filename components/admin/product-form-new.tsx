@@ -8,13 +8,16 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { UploadField } from "@/components/admin/upload-field"
 import { uploadProductImage, uploadProductVideo, addProductImages } from "@/lib/product-service"
-import { X, Video, Image as ImageIcon, Plus } from "lucide-react"
+import { X, Video, Image as ImageIcon, Plus, Loader2 } from "lucide-react"
 import { PARENT_CATEGORIES, SUBCATEGORIES } from "@/lib/constants"
 import type { ParentCategory, Subcategory } from "@/lib/constants"
 
 interface ProductFormProps {
   product?: Product | null
-  onSubmit: (product: Partial<Product>, images: Array<{ image_url: string; color_name: string; color_hex: string; sort_order: number }>) => void
+  onSubmit: (
+    product: Partial<Product>,
+    images: Array<{ image_url: string; color_name: string; color_hex: string; sort_order: number }>
+  ) => Promise<void> | void
   onCancel: () => void
 }
 
@@ -50,6 +53,7 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
 
   const [uploading, setUploading] = useState(false)
   const [uploadingVideo, setUploadingVideo] = useState(false)
+  const [saving, setSaving] = useState(false)
 
   const handleImageUpload = async (file: File, index?: number) => {
     if (!file) return
@@ -149,7 +153,14 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
       sort_order: img.sort_order,
     }))
 
-    onSubmit(formData, imagesToSave)
+    try {
+      setSaving(true)
+      await onSubmit(formData, imagesToSave)
+    } catch (error) {
+      console.error("Error saving product:", error)
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -370,8 +381,17 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
         <Button type="button" variant="outline" onClick={onCancel}>
           إلغاء
         </Button>
-        <Button type="submit" disabled={uploading || uploadingVideo}>
-          {product ? "تحديث المنتج" : "إضافة المنتج"}
+        <Button type="submit" disabled={uploading || uploadingVideo || saving}>
+          {saving ? (
+            <span className="flex items-center gap-2">
+              <Loader2 className="w-4 h-4 animate-spin" />
+              جارٍ الحفظ...
+            </span>
+          ) : product ? (
+            "تحديث المنتج"
+          ) : (
+            "إضافة المنتج"
+          )}
         </Button>
       </div>
     </form>
