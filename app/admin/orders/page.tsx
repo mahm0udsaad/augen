@@ -155,7 +155,24 @@ export default function AdminOrdersPage() {
     const message = encodeURIComponent(
       `مرحباً! بخصوص طلبك رقم ${orderNumber}. كيف يمكنني مساعدتك؟`
     );
-    window.open(`https://wa.me/${phone.replace(/\D/g, '')}?text=${message}`, '_blank');
+
+    const digitsOnly = phone.replace(/\D/g, '');
+    if (!digitsOnly) {
+      toast.error('رقم الهاتف غير صالح');
+      return;
+    }
+
+    const trimmedNumber = digitsOnly.replace(/^0+/, '');
+    if (!trimmedNumber) {
+      toast.error('رقم الهاتف غير صالح');
+      return;
+    }
+
+    const normalizedPhone = trimmedNumber.startsWith('20')
+      ? trimmedNumber
+      : `20${trimmedNumber}`;
+
+    window.open(`https://wa.me/${normalizedPhone}?text=${message}`, '_blank');
   };
 
   const filteredOrders = orders.filter((order) => {
@@ -447,4 +464,3 @@ export default function AdminOrdersPage() {
     </div>
   );
 }
-
