@@ -6,6 +6,8 @@ export interface ProductImage {
   image_url: string
   color_name: string
   color_hex: string
+  color_type?: "color" | "tiger"
+  tiger_type?: string | null
   sort_order: number
   created_at: string
 }

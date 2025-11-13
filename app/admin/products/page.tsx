@@ -16,6 +16,9 @@ import {
   deleteProduct,
   addProductImages,
   deleteProductImage,
+  upsertProductImages,
+  deleteProductImagesByIds,
+  type ProductImageInput,
 } from "@/lib/product-service"
 import { toast } from "@/hooks/use-toast"
 
@@ -65,24 +68,58 @@ export default function AdminProductsPage() {
 
   const handleAddProduct = async (
     product: Partial<Product>,
-    images: Array<{ image_url: string; color_name: string; color_hex: string; sort_order: number }>
+    images: ProductImageInput[]
   ) => {
     try {
       setSubmitting(true)
       
+      const normalizedImages: ProductImageInput[] = images.map((img, index) => ({
+        ...img,
+        id:
+          img.id && img.id.startsWith("temp-")
+            ? undefined
+            : img.id,
+        sort_order: index,
+        color_type: img.color_type ?? "color",
+        tiger_type:
+          (img.color_type ?? "color") === "tiger"
+            ? img.tiger_type || img.color_name
+            : null,
+      }))
+
       if (editingProduct) {
         // Update existing product
         const updated = await updateProduct(editingProduct.id, product)
-        
-        // Add new images if any
-        if (images.length > 0) {
-          await addProductImages(updated.id, images)
+
+        const existingIds = editingProduct.images?.map((img) => img.id) || []
+        const incomingIds = normalizedImages
+          .map((img) => img.id)
+          .filter((id): id is string => Boolean(id))
+        const removedIds = existingIds.filter((id) => !incomingIds.includes(id))
+
+        if (removedIds.length > 0) {
+          await deleteProductImagesByIds(removedIds)
+
+          const removedImages = (editingProduct.images || []).filter((img) =>
+            removedIds.includes(img.id)
+          )
+
+          await Promise.all(
+            removedImages.map((img) =>
+              img.image_url && img.image_url.includes('supabase.co')
+                ? deleteProductImage(img.image_url)
+                : Promise.resolve()
+            )
+          )
         }
-        
-        // Reload product to get updated images
+
+        if (normalizedImages.length > 0) {
+          await upsertProductImages(updated.id, normalizedImages)
+        }
+
         const refreshed = await getAllProducts()
         setProducts(refreshed)
-        
+
         toast({
           title: "تم بنجاح",
           description: "تم تحديث المنتج بنجاح",
@@ -93,8 +130,8 @@ export default function AdminProductsPage() {
         const created = await createProduct(product as any)
         
         // Add images
-        if (images.length > 0) {
-          await addProductImages(created.id, images)
+        if (normalizedImages.length > 0) {
+          await addProductImages(created.id, normalizedImages)
         }
         
         // Reload products to get the new product with images

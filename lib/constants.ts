@@ -58,6 +58,11 @@ export const PARENT_SUBCATEGORY_MAP: Record<ParentCategory, Subcategory[]> = {
   optical_glasses: ["man", "woman", "child", "high_quality"],
 }
 
+export const TIGER_BADGE_COLORS = {
+  base: "#321703",
+  highlight: "#FBBF24",
+} as const
+
 // Helper functions
 export function getParentCategoryName(id: ParentCategory, lang: 'ar' | 'en' = 'ar'): string {
   return lang === 'ar' ? PARENT_CATEGORIES[id].name_ar : PARENT_CATEGORIES[id].name_en;

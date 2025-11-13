@@ -1,16 +1,18 @@
 "use client"
 
-import { useState, useRef } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
-import { ChevronLeft, ChevronRight, Play, Pause } from "lucide-react"
+import { ChevronLeft, ChevronRight, Play, Pause, Maximize2, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { Dialog, DialogContent } from "@/components/ui/dialog"
 import type { ProductImage } from "@/lib/products"
+import { TIGER_BADGE_COLORS } from "@/lib/constants"
 
 interface ProductMediaCarouselProps {
   videoUrl?: string | null
   images: ProductImage[]
   productName: string
-  onColorSelect?: (colorHex: string) => void
+  onColorSelect?: (label: string) => void
 }
 
 export default function ProductMediaCarousel({
@@ -22,6 +24,9 @@ export default function ProductMediaCarousel({
   const [currentIndex, setCurrentIndex] = useState(0)
   const [isVideoPlaying, setIsVideoPlaying] = useState(false)
   const videoRef = useRef<HTMLVideoElement>(null)
+  const fullscreenVideoRef = useRef<HTMLVideoElement>(null)
+  const [isFullscreenOpen, setIsFullscreenOpen] = useState(false)
+  const [fullscreenIndex, setFullscreenIndex] = useState(0)
 
   // Combine video (if exists) and images into media array
   const mediaItems = [
@@ -40,6 +45,18 @@ export default function ProductMediaCarousel({
   }
 
   const currentItem = mediaItems[currentIndex]
+  const fullscreenItem = mediaItems[fullscreenIndex]
+
+  const syncFullscreenIndex = (index: number) => {
+    if (totalItems === 0) return
+    if (index < 0) {
+      setFullscreenIndex(totalItems - 1)
+    } else if (index >= totalItems) {
+      setFullscreenIndex(0)
+    } else {
+      setFullscreenIndex(index)
+    }
+  }
 
   const nextSlide = () => {
     setCurrentIndex((prev) => (prev + 1) % totalItems)
@@ -47,6 +64,7 @@ export default function ProductMediaCarousel({
       setIsVideoPlaying(false)
       videoRef.current?.pause()
     }
+    syncFullscreenIndex((currentIndex + 1) % totalItems)
   }
 
   const prevSlide = () => {
@@ -55,6 +73,7 @@ export default function ProductMediaCarousel({
       setIsVideoPlaying(false)
       videoRef.current?.pause()
     }
+    syncFullscreenIndex((currentIndex - 1 + totalItems) % totalItems)
   }
 
   const goToSlide = (index: number) => {
@@ -63,6 +82,7 @@ export default function ProductMediaCarousel({
       setIsVideoPlaying(false)
       videoRef.current?.pause()
     }
+    syncFullscreenIndex(index)
   }
 
   const toggleVideoPlayback = () => {
@@ -76,28 +96,94 @@ export default function ProductMediaCarousel({
     }
   }
 
-  // Group images by color
+  const openFullscreen = (index: number) => {
+    if (totalItems === 0) return
+    const normalizedIndex = ((index % totalItems) + totalItems) % totalItems
+    syncFullscreenIndex(normalizedIndex)
+    setIsFullscreenOpen(true)
+    setTimeout(() => {
+      const targetItem = mediaItems[normalizedIndex]
+      if (targetItem?.type === "video") {
+        fullscreenVideoRef.current?.play()
+      }
+    }, 150)
+  }
+
+  const fullscreenNext = () => {
+    syncFullscreenIndex(fullscreenIndex + 1)
+  }
+
+  const fullscreenPrev = () => {
+    syncFullscreenIndex(fullscreenIndex - 1)
+  }
+
+  useEffect(() => {
+    if (totalItems === 0) {
+      setIsFullscreenOpen(false)
+      setFullscreenIndex(0)
+    } else if (fullscreenIndex >= totalItems) {
+      setFullscreenIndex(totalItems - 1)
+    }
+  }, [totalItems, fullscreenIndex])
+
+  useEffect(() => {
+    if (!isFullscreenOpen && fullscreenItem?.type === "video") {
+      fullscreenVideoRef.current?.pause()
+    }
+  }, [isFullscreenOpen, fullscreenItem])
+
+  type ColorGroup = {
+    name: string
+    hex: string
+    index: number
+    colorType: "color" | "tiger"
+    tigerType?: string | null
+  }
+
   const colorGroups = images.reduce((acc, img, index) => {
-    const colorKey = img.color_hex
+    const colorType = (img.color_type as "color" | "tiger") || "color"
+    const tigerLabel = img.tiger_type || img.color_name
+    const colorKey =
+      colorType === "tiger"
+        ? `tiger-${tigerLabel || img.id}`
+        : img.color_hex || img.id
+
     if (!acc[colorKey]) {
       acc[colorKey] = {
         name: img.color_name,
         hex: img.color_hex,
-        index: videoUrl ? index + 1 : index, // Offset by 1 if video exists
+        index: videoUrl ? index + 1 : index,
+        colorType,
+        tigerType: img.tiger_type,
       }
     }
     return acc
-  }, {} as Record<string, { name: string; hex: string; index: number }>)
+  }, {} as Record<string, ColorGroup>)
 
-  const handleColorClick = (hex: string, index: number) => {
-    goToSlide(index)
-    onColorSelect?.(hex)
+  const handleColorClick = (groupKey: string, group: ColorGroup) => {
+    goToSlide(group.index)
+    const label =
+      group.colorType === "tiger"
+        ? `${group.name}${group.tigerType ? ` - ${group.tigerType}` : ""}`
+        : group.name
+    onColorSelect?.(label)
   }
 
   return (
     <div className="space-y-4">
       {/* Main Media Display */}
       <div className="relative w-full aspect-square bg-secondary rounded-lg overflow-hidden group">
+        {totalItems > 0 && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="absolute top-3 right-3 z-20 bg-white/80 text-foreground hover:bg-white"
+            onClick={() => openFullscreen(currentIndex)}
+            aria-label="عرض بملء الشاشة"
+          >
+            <Maximize2 className="w-5 h-5" />
+          </Button>
+        )}
         {currentItem.type === "video" ? (
           <div className="relative w-full h-full">
             <video
@@ -201,28 +287,111 @@ export default function ProductMediaCarousel({
         <div className="space-y-2" dir="rtl">
           <p className="text-sm font-medium text-foreground">الألوان المتاحة:</p>
           <div className="flex flex-wrap gap-2">
-            {Object.entries(colorGroups).map(([hex, data]) => (
+            {Object.entries(colorGroups).map(([key, data]) => (
               <button
-                key={hex}
-                onClick={() => handleColorClick(hex, data.index)}
+                key={key}
+                onClick={() => handleColorClick(key, data)}
                 className={`flex items-center gap-2 px-3 py-2 rounded-lg border-2 transition-all ${
                   currentIndex === data.index
                     ? "border-primary bg-primary/5"
                     : "border-border hover:border-primary/50 hover:bg-secondary"
                 }`}
-                title={data.name}
+                title={data.colorType === "tiger" ? data.tigerType || data.name : data.name}
               >
-                <div
-                  className="w-6 h-6 rounded-full border-2 border-white shadow-sm"
-                  style={{ backgroundColor: hex }}
-                />
-                <span className="text-sm font-medium">{data.name}</span>
+                <div className="w-7 h-7 rounded-full border-2 border-white shadow-sm overflow-hidden">
+                  {data.colorType === "tiger" ? (
+                    <div
+                      className="w-full h-full"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, ${TIGER_BADGE_COLORS.base}, ${TIGER_BADGE_COLORS.highlight})`,
+                      }}
+                    />
+                  ) : (
+                    <div
+                      className="w-full h-full"
+                      style={{ backgroundColor: data.hex || "#000000" }}
+                    />
+                  )}
+                </div>
+                <div className="flex flex-col text-right leading-tight">
+                  <span className="text-sm font-medium">
+                    {data.colorType === "tiger" ? data.tigerType || data.name : data.name}
+                  </span>
+                  {data.colorType === "tiger" && (
+                    <span className="text-[11px] text-muted-foreground">تايجر • {data.name}</span>
+                  )}
+                </div>
               </button>
             ))}
           </div>
         </div>
       )}
+
+      {totalItems > 0 && fullscreenItem && (
+        <Dialog open={isFullscreenOpen} onOpenChange={setIsFullscreenOpen}>
+          <DialogContent className="max-w-5xl w-[95vw] h-[90vh] p-0 overflow-hidden border-none bg-black text-white">
+            <div className="relative w-full h-full bg-black">
+              <Button
+                variant="ghost"
+                size="icon"
+                className="absolute top-3 right-3 z-30 bg-white/20 hover:bg-white/30"
+                onClick={() => setIsFullscreenOpen(false)}
+                aria-label="إغلاق العرض الكامل"
+              >
+                <X className="w-5 h-5" />
+              </Button>
+
+              {fullscreenItem.type === "video" ? (
+                <video
+                  ref={fullscreenVideoRef}
+                  src={fullscreenItem.url}
+                  className="w-full h-full object-contain"
+                  controls
+                  autoPlay
+                  loop
+                  playsInline
+                />
+              ) : (
+                <Image
+                  src={fullscreenItem.url}
+                  alt={`${productName} - preview`}
+                  fill
+                  className="object-contain"
+                  sizes="100vw"
+                  priority
+                />
+              )}
+
+              {totalItems > 1 && (
+                <>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute left-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30"
+                    onClick={fullscreenPrev}
+                    aria-label="السابق"
+                  >
+                    <ChevronLeft className="w-6 h-6" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="absolute right-4 top-1/2 -translate-y-1/2 z-20 bg-white/20 hover:bg-white/30"
+                    onClick={fullscreenNext}
+                    aria-label="التالي"
+                  >
+                    <ChevronRight className="w-6 h-6" />
+                  </Button>
+                </>
+              )}
+
+              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 bg-black/70 px-4 py-1 rounded-full text-sm">
+                {fullscreenIndex + 1} / {totalItems}
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
     </div>
   )
 }
-

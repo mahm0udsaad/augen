@@ -1,13 +1,13 @@
 "use client"
 
-import { useState, useEffect } from "react"
+import { useState, useEffect, useMemo } from "react"
 import Image from "next/image"
 import Link from "next/link"
 import type { Product } from "@/lib/products"
-import { products } from "@/lib/products"
 import WhatsAppButton from "./whatsapp-button"
 import { useCart } from "@/lib/cart-context"
-import { ShoppingCart, Check, Heart } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { ShoppingCart, Check, Heart, Share2, Facebook, Instagram, Twitter, Copy, MessageCircle } from "lucide-react"
 import { useFavorites } from "@/lib/favorites-context"
 import ProductMediaCarousel from "./product-media-carousel"
 import { useMediaQuery } from "@/hooks/use-media-query"
@@ -15,6 +15,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import CheckoutBottomSheet from "@/components/checkout-bottom-sheet"
 import { toast } from "sonner"
 import { useShippingCities } from "@/hooks/use-shipping-cities"
+import { TIGER_BADGE_COLORS } from "@/lib/constants"
 
 interface ProductDetailProps {
   product: Product
@@ -43,6 +44,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     notes: "",
     shippingCityId: "",
   })
+  const [shareUrl, setShareUrl] = useState("")
+  const [copySuccess, setCopySuccess] = useState(false)
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false)
   const CUSTOMER_INFO_STORAGE_KEY = "augen_checkout_info"
   const {
     cities: shippingCities,
@@ -93,6 +97,182 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       })
     }
   }, [isLoadingShippingCities, shippingCities])
+
+
+  const imageColorSwatches = useMemo(() => {
+    if (!product.images || product.images.length === 0) return []
+    const swatchMap = new Map<string, {
+      key: string
+      label: string
+      subtitle?: string
+      colorType: "color" | "tiger"
+      hex: string
+    }>()
+
+    product.images.forEach((img, index) => {
+      const mode = (img.color_type as "color" | "tiger") || "color"
+      const tigerLabel = img.tiger_type?.trim()
+      const baseName = img.color_name?.trim() || tigerLabel || `Color ${index + 1}`
+      const displayName = mode === "tiger"
+        ? `${baseName}${tigerLabel ? ` - ${tigerLabel}` : ""}`
+        : baseName
+      const key = `${mode}-${baseName}-${tigerLabel || ""}`
+
+      if (!swatchMap.has(key)) {
+        swatchMap.set(key, {
+          key,
+          label: displayName,
+          subtitle: mode === "tiger" ? tigerLabel || baseName : undefined,
+          colorType: mode,
+          hex: mode === "tiger" ? TIGER_BADGE_COLORS.base : img.color_hex || "#000000",
+        })
+      }
+    })
+
+    return Array.from(swatchMap.values())
+  }, [product.images])
+
+  const fallbackColorOptions = useMemo(() => {
+    if (!product.colorOptions || product.colorOptions.length === 0) return []
+    return product.colorOptions.map((option, index) => ({
+      key: `${option.name}-${index}`,
+      label: option.name,
+      colorType: "color" as const,
+      hex: option.hex || "#000000",
+    }))
+  }, [product.colorOptions])
+
+  const availableColorSwatches = imageColorSwatches.length > 0 ? imageColorSwatches : fallbackColorOptions
+  const defaultShareUrl = useMemo(() => {
+    const base = process.env.NEXT_PUBLIC_SITE_URL || "https://augen.vercel.app"
+    return `${base.replace(/\/$/, "")}/product/${product.id}`
+  }, [product.id])
+  const effectiveShareUrl = shareUrl || defaultShareUrl
+  const shareMessage = useMemo(
+    () => `${product.name} – ${product.price} EGP من AUGEN. اكتشف الرفاهية الآن!`,
+    [product.name, product.price]
+  )
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      setShareUrl(window.location.href)
+    }
+  }, [])
+
+  const openShareWindow = (url: string) => {
+    if (typeof window === "undefined") return
+    window.open(url, "_blank", "noopener,noreferrer")
+  }
+
+  const handleCopyLink = async (silent = false) => {
+    const targetUrl = effectiveShareUrl
+    if (typeof navigator === "undefined") return
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(targetUrl)
+        if (!silent) {
+          setCopySuccess(true)
+          setTimeout(() => setCopySuccess(false), 2500)
+        }
+      }
+    } catch (error) {
+      setCopySuccess(false)
+    }
+  }
+
+  const shareOptions = [
+    {
+      id: "facebook",
+      label: "Facebook",
+      accent: "bg-[#1877F2] hover:bg-[#0f5bd8]",
+      Icon: Facebook,
+      action: () => {
+        // Facebook Post Sharer - Only accepts URL, pulls preview from OG meta tags
+        openShareWindow(
+          `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(effectiveShareUrl)}`
+        )
+      },
+    },
+    {
+      id: "linkedin",
+      label: "LinkedIn",
+      accent: "bg-[#0077B5] hover:bg-[#006396]",
+      Icon: (props: any) => (
+        <svg {...props} viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 0h-14c-2.761 0-5 2.239-5 5v14c0 2.761 2.239 5 5 5h14c2.762 0 5-2.239 5-5v-14c0-2.761-2.238-5-5-5zm-11 19h-3v-11h3v11zm-1.5-12.268c-.966 0-1.75-.79-1.75-1.764s.784-1.764 1.75-1.764 1.75.79 1.75 1.764-.783 1.764-1.75 1.764zm13.5 12.268h-3v-5.604c0-3.368-4-3.113-4 0v5.604h-3v-11h3v1.765c1.396-2.586 7-2.777 7 2.476v6.759z"/>
+        </svg>
+      ),
+      action: () => {
+        // LinkedIn Share - Only accepts URL, pulls preview from OG meta tags
+        openShareWindow(
+          `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(effectiveShareUrl)}`
+        )
+      },
+    },
+    {
+      id: "whatsapp",
+      label: "WhatsApp",
+      accent: "bg-[#25D366] hover:bg-[#1fb857]",
+      Icon: MessageCircle,
+      action: () => {
+        // WhatsApp - Share text with URL
+        openShareWindow(
+          `https://wa.me/?text=${encodeURIComponent(`${shareMessage}\n${effectiveShareUrl}`)}`
+        )
+      },
+    },
+    {
+      id: "x",
+      label: "X (Twitter)",
+      accent: "bg-[#0F1419] text-white hover:bg-black",
+      Icon: Twitter,
+      action: () => {
+        // X/Twitter Post Intent - creates a new tweet with text and link
+        openShareWindow(
+          `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareMessage)}&url=${encodeURIComponent(
+            effectiveShareUrl
+          )}`
+        )
+      },
+    },
+    {
+      id: "instagram",
+      label: "Instagram",
+      accent: "bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90",
+      Icon: Instagram,
+      action: async () => {
+        // Instagram doesn't have direct web posting, copy link and show toast
+        await handleCopyLink(true)
+        toast.success("Link copied! Open Instagram app to create your post", {
+          duration: 4000,
+        })
+      },
+    },
+  ]
+
+  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function"
+
+  const handleNativeShare = async () => {
+    if (typeof navigator === "undefined" || !navigator.share) return
+    try {
+      await navigator.share({
+        title: product.name,
+        text: shareMessage,
+        url: effectiveShareUrl,
+      })
+    } catch (error) {
+      // user cancelled share; ignore
+    }
+  }
+
+
+  useEffect(() => {
+    if (availableColorSwatches.length > 0) {
+      setSelectedColor(availableColorSwatches[0].label)
+    } else {
+      setSelectedColor("")
+    }
+  }, [availableColorSwatches])
 
   const handleAddToCart = () => {
     if (availableQuantity <= 0) {
@@ -194,7 +374,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 videoUrl={product.video_url}
                 images={product.images || []}
                 productName={product.name}
-                onColorSelect={(hex) => setSelectedColor(hex)}
+                onColorSelect={(label) => setSelectedColor(label)}
               />
             </div>
           </div>
@@ -237,38 +417,95 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               </div>
 
               {/* Color circles */}
-              {product.colorOptions && product.colorOptions.length > 0 && (
+              {availableColorSwatches.length > 0 && (
                 <div className="space-y-3">
                   <p className="text-xs md:text-sm font-semibold text-foreground uppercase tracking-wide">
                     Available Colors
                   </p>
                   <div className="flex gap-3 flex-wrap">
-                    {product.colorOptions.map((colorOption) => (
+                    {availableColorSwatches.map((swatch) => (
                       <button
-                        key={colorOption.hex}
-                        onClick={() => setSelectedColor(colorOption.name)}
+                        key={swatch.key}
+                        onClick={() => setSelectedColor(swatch.label)}
                         className={`group relative flex items-center justify-center transition-all duration-300 ${
-                          selectedColor === colorOption.name ? "scale-110" : "hover:scale-105"
+                          selectedColor === swatch.label ? "scale-110" : "hover:scale-105"
                         }`}
-                        title={colorOption.name}
+                        title={swatch.label}
                       >
                         <div
                           className={`w-10 h-10 md:w-12 md:h-12 rounded-full border-2 transition-all duration-300 shadow-sm hover:shadow-md ${
-                            selectedColor === colorOption.name
+                            selectedColor === swatch.label
                               ? "border-accent ring-2 ring-accent ring-offset-2"
                               : "border-border hover:border-accent/50"
                           }`}
-                          style={{ backgroundColor: colorOption.hex }}
+                          style={
+                            swatch.colorType === "tiger"
+                              ? {
+                                  backgroundImage: `linear-gradient(135deg, ${TIGER_BADGE_COLORS.base}, ${TIGER_BADGE_COLORS.highlight})`,
+                                }
+                              : { backgroundColor: swatch.hex || "#000000" }
+                          }
                         />
                         <span className="absolute top-full mt-2 text-xs font-medium text-foreground opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap bg-background px-2 py-1 rounded border border-border">
-                          {colorOption.name}
+                          {swatch.label}
+                          {swatch.subtitle && ` • ${swatch.subtitle}`}
                         </span>
                       </button>
                     ))}
                   </div>
-                  <p className="text-xs text-muted-foreground mt-2">Selected Color: {selectedColor}</p>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Selected Color: {selectedColor || "—"}
+                  </p>
                 </div>
               )}
+
+              {/* Share tools */}
+              <div className="space-y-3 border-t border-border pt-4">
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+                  <div>
+                    <p className="text-xs md:text-sm font-semibold text-foreground uppercase tracking-wide">
+                      Launch a Shareable Moment
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      شارك المنتج مباشرةً على قنواتك التسويقية.
+                    </p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="gap-2"
+                      onClick={handleNativeShare}
+                      disabled={!canNativeShare}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Quick Share
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setIsShareModalOpen(true)}
+                    >
+                      <Share2 className="w-4 h-4" />
+                      Share Options
+                    </Button>
+                  </div>
+                </div>
+                <div className="flex flex-wrap items-center gap-3">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="gap-2"
+                    onClick={() => handleCopyLink(false)}
+                  >
+                    <Copy className="w-4 h-4" />
+                    {copySuccess ? "تم نسخ الرابط" : "Copy Link"}
+                  </Button>
+                  <span className="text-[11px] text-muted-foreground truncate max-w-full">
+                    {effectiveShareUrl}
+                  </span>
+                </div>
+              </div>
             </div>
 
             {/* Action buttons - sticky on mobile */}
@@ -366,10 +603,54 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               </div>
             </div>
           </div>
-        </div>
+      </div>
 
-        {/* ... related items, store info, and support sections remain unchanged ... */}
-        {relatedItems.length > 0 && (
+      {/* Share Modal */}
+      <Dialog open={isShareModalOpen} onOpenChange={setIsShareModalOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>شارك المنتج عبر قنواتك</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              اختر المنصة المناسبة، وسنجهز الرسالة والرابط المُحسَّن ببيانات OpenGraph.
+            </p>
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {shareOptions.map((option) => (
+                <button
+                  key={option.id}
+                  onClick={() => {
+                    option.action()
+                    setIsShareModalOpen(false)
+                  }}
+                  className={`${option.accent} text-white rounded-lg py-2 px-3 flex items-center justify-center gap-2 text-sm font-semibold transition-colors focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary`}
+                >
+                  <option.Icon className="w-4 h-4" />
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div className="space-y-2">
+              <p className="text-xs uppercase font-semibold tracking-wide text-muted-foreground">الرابط المباشر</p>
+              <div className="flex items-center gap-2">
+                <div className="flex-1 rounded-lg border px-3 py-2 text-sm truncate">
+                  {effectiveShareUrl}
+                </div>
+                <Button variant="outline" size="sm" onClick={() => handleCopyLink(false)} className="gap-2">
+                  <Copy className="w-4 h-4" />
+                  {copySuccess ? "تم النسخ" : "Copy"}
+                </Button>
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                تمت تهيئة الرابط ليعرض معاينة SEO/OG على واتساب وفيسبوك.
+              </p>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* ... related items, store info, and support sections remain unchanged ... */}
+      {relatedItems.length > 0 && (
           <div className="mt-12 md:mt-24 border-t border-border pt-8 md:pt-12 px-4 md:px-0">
             <h2 className="text-2xl md:text-3xl font-serif font-bold text-foreground mb-6 md:mb-8">
               You May Also Like

@@ -50,6 +50,16 @@ function toSupabaseProduct(product: Partial<Product>): any {
   return supabaseProduct
 }
 
+export interface ProductImageInput {
+  id?: string
+  image_url: string
+  color_name: string
+  color_hex: string
+  sort_order: number
+  color_type?: 'color' | 'tiger'
+  tiger_type?: string | null
+}
+
 // Get all products
 export async function getAllProducts(): Promise<Product[]> {
   const { data, error } = await supabase
@@ -63,7 +73,9 @@ export async function getAllProducts(): Promise<Product[]> {
         color_name,
         color_hex,
         sort_order,
-        created_at
+        created_at,
+        color_type,
+        tiger_type
       )
     `)
     .order('created_at', { ascending: false })
@@ -89,7 +101,9 @@ export async function getProductById(id: string): Promise<Product | null> {
         color_name,
         color_hex,
         sort_order,
-        created_at
+        created_at,
+        color_type,
+        tiger_type
       )
     `)
     .eq('id', id)
@@ -116,7 +130,9 @@ export async function getProductsByParentCategory(parentCategory: ParentCategory
         color_name,
         color_hex,
         sort_order,
-        created_at
+        created_at,
+        color_type,
+        tiger_type
       )
     `)
     .eq('parent_category', parentCategory)
@@ -146,7 +162,9 @@ export async function getProductsByCategories(
         color_name,
         color_hex,
         sort_order,
-        created_at
+        created_at,
+        color_type,
+        tiger_type
       )
     `)
     .eq('parent_category', parentCategory)
@@ -259,15 +277,17 @@ export async function uploadProductVideo(file: File): Promise<string> {
 }
 
 // Add product images
-export async function addProductImages(productId: string, images: Array<{
-  image_url: string
-  color_name: string
-  color_hex: string
-  sort_order: number
-}>): Promise<ProductImage[]> {
-  const imagesToInsert = images.map(img => ({
-    ...img,
+export async function addProductImages(productId: string, images: ProductImageInput[]): Promise<ProductImage[]> {
+  if (!images.length) return []
+
+  const imagesToInsert = images.map((img) => ({
     product_id: productId,
+    image_url: img.image_url,
+    color_name: img.color_name,
+    color_hex: img.color_hex,
+    sort_order: img.sort_order,
+    color_type: img.color_type ?? 'color',
+    tiger_type: img.tiger_type ?? null,
   }))
 
   const { data, error } = await supabase
@@ -281,6 +301,47 @@ export async function addProductImages(productId: string, images: Array<{
   }
 
   return data || []
+}
+
+export async function upsertProductImages(productId: string, images: ProductImageInput[]): Promise<ProductImage[]> {
+  if (!images.length) return []
+
+  const payload = images.map((img) => ({
+    ...(img.id ? { id: img.id } : {}),
+    product_id: productId,
+    image_url: img.image_url,
+    color_name: img.color_name,
+    color_hex: img.color_hex,
+    sort_order: img.sort_order,
+    color_type: img.color_type ?? 'color',
+    tiger_type: img.tiger_type ?? null,
+  }))
+
+  const { data, error } = await supabase
+    .from('product_images')
+    .upsert(payload, { onConflict: 'id' })
+    .select()
+
+  if (error) {
+    console.error('Error syncing product images:', error)
+    throw error
+  }
+
+  return data || []
+}
+
+export async function deleteProductImagesByIds(imageIds: string[]): Promise<void> {
+  if (!imageIds.length) return
+
+  const { error } = await supabase
+    .from('product_images')
+    .delete()
+    .in('id', imageIds)
+
+  if (error) {
+    console.error('Error deleting product images:', error)
+    throw error
+  }
 }
 
 // Delete product image

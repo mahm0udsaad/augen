@@ -1,22 +1,24 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import type { Product, ProductImage } from "@/lib/products"
+import type { Product } from "@/lib/products"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { UploadField } from "@/components/admin/upload-field"
-import { uploadProductImage, uploadProductVideo, addProductImages } from "@/lib/product-service"
+import { uploadProductImage, uploadProductVideo } from "@/lib/product-service"
 import { X, Video, Image as ImageIcon, Plus, Loader2 } from "lucide-react"
-import { PARENT_CATEGORIES, SUBCATEGORIES } from "@/lib/constants"
+import { PARENT_CATEGORIES, SUBCATEGORIES, TIGER_BADGE_COLORS } from "@/lib/constants"
 import type { ParentCategory, Subcategory } from "@/lib/constants"
+import type { ProductImageInput } from "@/lib/product-service"
 
 interface ProductFormProps {
   product?: Product | null
   onSubmit: (
     product: Partial<Product>,
-    images: Array<{ image_url: string; color_name: string; color_hex: string; sort_order: number }>
+    images: ProductImageInput[]
   ) => Promise<void> | void
   onCancel: () => void
 }
@@ -27,6 +29,8 @@ interface ImageWithColor {
   url: string
   color_name: string
   color_hex: string
+  color_type: "color" | "tiger"
+  tiger_type?: string | null
   sort_order: number
 }
 
@@ -42,18 +46,26 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
   })
 
   const [images, setImages] = useState<ImageWithColor[]>(
-    product?.images?.map((img, index) => ({
-      id: img.id,
-      url: img.image_url,
-      color_name: img.color_name,
-      color_hex: img.color_hex,
-      sort_order: index,
-    })) || []
+    product?.images?.map((img, index) => {
+      const mode = (img.color_type as "color" | "tiger") || "color"
+      return {
+        id: img.id,
+        url: img.image_url,
+        color_name: img.color_name,
+        color_type: mode,
+        color_hex: mode === "tiger" ? img.color_hex || TIGER_BADGE_COLORS.base : img.color_hex || "#000000",
+        tiger_type: img.tiger_type || "",
+        sort_order: index,
+      }
+    }) || []
   )
 
   const [uploading, setUploading] = useState(false)
   const [uploadingVideo, setUploadingVideo] = useState(false)
   const [saving, setSaving] = useState(false)
+
+  const getDisplayName = (img: ImageWithColor) =>
+    img.color_name?.trim() || img.tiger_type?.trim() || ""
 
   const handleImageUpload = async (file: File, index?: number) => {
     if (!file) return
@@ -74,6 +86,8 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
           url,
           color_name: "",
           color_hex: "#000000",
+          color_type: "color",
+          tiger_type: "",
           sort_order: images.length,
         }
         setImages([...images, newImage])
@@ -105,9 +119,35 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
     }
   }
 
-  const handleImageColorChange = (index: number, field: "color_name" | "color_hex", value: string) => {
+  const handleImageFieldChange = (
+    index: number,
+    field: keyof ImageWithColor,
+    value: any
+  ) => {
     const newImages = [...images]
-    newImages[index] = { ...newImages[index], [field]: value }
+    const current = newImages[index]
+    if (!current) return
+
+    if (field === "color_type") {
+      const nextType = value as "color" | "tiger"
+      newImages[index] = {
+        ...current,
+        color_type: nextType,
+        color_hex: nextType === "tiger" ? TIGER_BADGE_COLORS.base : current.color_hex || "#000000",
+        tiger_type: nextType === "tiger" ? current.tiger_type || "" : "",
+      }
+    } else if (field === "tiger_type") {
+      newImages[index] = { ...current, tiger_type: value }
+      if (!current.color_name?.trim()) {
+        newImages[index].color_name = value
+      }
+    } else if (field === "color_hex" && current.color_type === "tiger") {
+      // Tiger badge color is fixed
+      return
+    } else {
+      newImages[index] = { ...current, [field]: value }
+    }
+
     setImages(newImages)
   }
 
@@ -140,17 +180,35 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
 
     // Validate that all images have color info
     for (const img of images) {
-      if (!img.color_name || !img.color_hex) {
-        alert("يرجى إضافة اسم ولون لجميع الصور")
+      const displayName = getDisplayName(img)
+
+      if (!displayName) {
+        alert("يرجى إضافة اسم لكل لون أو نقشة")
+        return
+      }
+
+      if (img.color_type === "color" && !img.color_hex) {
+        alert("يرجى اختيار لون الشارة لكل صورة")
+        return
+      }
+
+      if (img.color_type === "tiger" && !img.tiger_type?.trim()) {
+        alert("يرجى إدخال اسم لنوع التايجر")
         return
       }
     }
 
-    const imagesToSave = images.map((img) => ({
+    const imagesToSave: ProductImageInput[] = images.map((img, index) => ({
+      id: img.id.startsWith("temp-") ? undefined : img.id,
       image_url: img.url,
-      color_name: img.color_name,
-      color_hex: img.color_hex,
-      sort_order: img.sort_order,
+      color_name: getDisplayName(img),
+      color_hex:
+        img.color_type === "tiger"
+          ? TIGER_BADGE_COLORS.base
+          : img.color_hex || "#000000",
+      sort_order: index,
+      color_type: img.color_type,
+      tiger_type: img.color_type === "tiger" ? img.tiger_type || img.color_name : null,
     }))
 
     try {
@@ -312,33 +370,98 @@ export function ProductFormNew({ product, onSubmit, onCancel }: ProductFormProps
                 </div>
 
                 {/* Color Info */}
-                <div className="flex-1 grid grid-cols-2 gap-3">
-                  <div className="space-y-1">
-                    <Label className="text-xs">اسم اللون</Label>
-                    <Input
-                      value={image.color_name}
-                      onChange={(e) => handleImageColorChange(index, "color_name", e.target.value)}
-                      placeholder="ذهبي"
-                      className="h-9"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs">كود اللون</Label>
-                    <div className="flex gap-2">
+                <div className="flex-1 space-y-4">
+                  <div className="grid gap-3 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs">الاسم الظاهر للعميل *</Label>
                       <Input
-                        type="color"
-                        value={image.color_hex}
-                        onChange={(e) => handleImageColorChange(index, "color_hex", e.target.value)}
-                        className="h-9 w-16"
+                        value={image.color_name}
+                        onChange={(e) => handleImageFieldChange(index, "color_name", e.target.value)}
+                        placeholder="ذهبي / Black"
+                        className="h-9"
                       />
-                      <Input
-                        value={image.color_hex}
-                        onChange={(e) => handleImageColorChange(index, "color_hex", e.target.value)}
-                        placeholder="#D4AF37"
-                        className="h-9 flex-1"
-                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        سيُعرض هذا الاسم تحت الصور وفي صفحة المنتج.
+                      </p>
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs">طريقة التمييز</Label>
+                      <RadioGroup
+                        className="flex flex-col gap-3 md:flex-row"
+                        value={image.color_type}
+                        onValueChange={(value) =>
+                          handleImageFieldChange(index, "color_type", value as "color" | "tiger")
+                        }
+                      >
+                        <label className="flex items-start gap-2 text-xs font-medium cursor-pointer rounded-lg border px-3 py-2">
+                          <RadioGroupItem value="color" id={`color-mode-${image.id}-color`} />
+                          <div>
+                            <p className="font-semibold text-xs">لون ثابت</p>
+                            <p className="text-[11px] text-muted-foreground">اختر كود لون مخصص لهذه الصورة.</p>
+                          </div>
+                        </label>
+                        <label className="flex items-start gap-2 text-xs font-medium cursor-pointer rounded-lg border px-3 py-2">
+                          <RadioGroupItem value="tiger" id={`color-mode-${image.id}-tiger`} />
+                          <div>
+                            <p className="font-semibold text-xs">نقشة تايجر</p>
+                            <p className="text-[11px] text-muted-foreground">أضف اسم النقشة وسيظهر للعملاء.</p>
+                          </div>
+                        </label>
+                      </RadioGroup>
                     </div>
                   </div>
+
+                  {image.color_type === "tiger" && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">اسم نوع التايجر *</Label>
+                      <Input
+                        value={image.tiger_type || ""}
+                        onChange={(e) => handleImageFieldChange(index, "tiger_type", e.target.value)}
+                        placeholder="Classic Tiger / Zebra"
+                        className="h-10"
+                      />
+                      <p className="text-[11px] text-muted-foreground">
+                        سيُستخدم هذا الاسم مع بطاقة التايجر ويظهر فوق الكولكشن.
+                      </p>
+                    </div>
+                  )}
+
+                  {image.color_type === "tiger" ? (
+                    <div className="space-y-1">
+                      <Label className="text-xs">لون شارة التايجر *</Label>
+                      <div className="flex items-center gap-3">
+                        <div
+                          className="h-10 w-16 rounded-lg border"
+                          style={{
+                            backgroundImage: `linear-gradient(135deg, ${TIGER_BADGE_COLORS.base}, ${TIGER_BADGE_COLORS.highlight})`,
+                          }}
+                        />
+                        <div className="text-[11px] text-muted-foreground leading-tight">
+                          <p>لون ثابت لضمان تناسق مظهر نقشة التايجر.</p>
+                          <p>{TIGER_BADGE_COLORS.base} → {TIGER_BADGE_COLORS.highlight}</p>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="space-y-1">
+                      <Label className="text-xs">كود اللون *</Label>
+                      <div className="flex gap-2">
+                        <Input
+                          type="color"
+                          value={image.color_hex || "#000000"}
+                          onChange={(e) => handleImageFieldChange(index, "color_hex", e.target.value)}
+                          className="h-10 w-16 cursor-pointer"
+                        />
+                        <Input
+                          value={image.color_hex}
+                          onChange={(e) => handleImageFieldChange(index, "color_hex", e.target.value)}
+                          placeholder="#D4AF37"
+                          className="h-10 flex-1"
+                        />
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">يُستخدم هذا اللون لعنصر الاختيار.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Actions */}
