@@ -12,7 +12,7 @@ interface SocialLink {
 export const SOCIAL_LINKS: SocialLink[] = [
   {
     id: "facebook",
-    href: "https://www.facebook.com/AugenEyewear",
+    href: "https://www.facebook.com/share/1BhyF7vKBm/?mibextid=wwXIfr",
     label: {
       en: "Facebook",
       ar: "فيسبوك",
@@ -20,7 +20,7 @@ export const SOCIAL_LINKS: SocialLink[] = [
   },
   {
     id: "instagram",
-    href: "https://www.instagram.com/augen.eyewear",
+    href: "https://www.instagram.com/augenstore?igsh=MW1icTBrY2Z1cjY1Ng==",
     label: {
       en: "Instagram",
       ar: "إنستغرام",
