@@ -101,8 +101,15 @@ function ProductsPageContent() {
 
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
-      if (subFilter) return product.subcategory === subFilter
-      if (parentFilter) return product.parent_category === parentFilter
+      if (subFilter) {
+        // Always respect parent category when filtering by subcategory
+        if (parentFilter) {
+          return product.subcategory === subFilter && product.parent_category === parentFilter
+        }
+        return product.subcategory === subFilter
+      }
+      // Exclude high_quality products when filtering by parent category only
+      if (parentFilter) return product.parent_category === parentFilter && product.subcategory !== 'high_quality'
       return true
     })
   }, [products, parentFilter, subFilter])

@@ -90,10 +90,15 @@ export default function CategoriesPageClient({
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       if (subFilter) {
+        // Always respect parent category when filtering by subcategory
+        if (parentFilter) {
+          return product.subcategory === subFilter && product.parent_category === parentFilter
+        }
         return product.subcategory === subFilter
       }
       if (parentFilter) {
-        return product.parent_category === parentFilter
+        // Exclude high_quality products when filtering by parent category only
+        return product.parent_category === parentFilter && product.subcategory !== 'high_quality'
       }
       return true
     })
