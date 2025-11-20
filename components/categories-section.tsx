@@ -64,17 +64,30 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
         const isVisible = visibleItems.has(display.id)
         const parentKey = display.category_key as ParentCategory
         const allowedSubcategories = PARENT_SUBCATEGORY_MAP[parentKey] || (Object.keys(SUBCATEGORIES) as Subcategory[])
-        const subcats: [Subcategory, (typeof SUBCATEGORIES)[Subcategory]][] =
-          allowedSubcategories.map((key) => [key, SUBCATEGORIES[key]])
+        
+        // Find the high_quality subcategory display for this parent
+        const highQualityCard = getCardForSubcategory(display.category_key, "high_quality")
+        const highQualitySubcat = SUBCATEGORIES.high_quality
+        
+        // Filter out high_quality from the subcategories grid
+        const otherSubcats: [Subcategory, (typeof SUBCATEGORIES)[Subcategory]][] =
+          allowedSubcategories
+            .filter((key) => key !== "high_quality")
+            .map((key) => [key, SUBCATEGORIES[key]])
+        
         const parentFallback = PARENT_CATEGORIES[display.category_key as keyof typeof PARENT_CATEGORIES]
-        const displayTitle = isEnglish
-          ? display.title_en || parentFallback?.name_en || display.title_ar
-          : display.title_ar || parentFallback?.name_ar
-        const displaySlogan = isEnglish
-          ? display.slogan_en || parentFallback?.description_en || display.slogan_ar
-          : display.slogan_ar || parentFallback?.description_ar
         const primaryCta = isEnglish ? "Shop now" : "تسوق الآن"
         const discoverCopy = isEnglish ? "Discover more" : "اكتشف المزيد"
+
+        // Use high_quality subcategory for the hero section
+        const heroTitle = isEnglish
+          ? highQualitySubcat.name_en
+          : highQualitySubcat.name_ar
+        const heroSlogan = isEnglish
+          ? highQualitySubcat.description_en
+          : highQualitySubcat.description_ar
+        const heroImage = highQualityCard?.image_url || display.background_image
+        const heroMobileImage = highQualityCard?.mobile_image_url || highQualityCard?.image_url || display.mobile_background_image || display.background_image
 
         return (
           <section
@@ -83,13 +96,22 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
               isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"
             }`}
           >
+            {/* High Quality Hero Section */}
             <div className="relative h-[400px] md:h-[500px] rounded-2xl overflow-hidden mb-6 group">
               <div className="absolute inset-0">
                 <Image
-                  src={display.background_image}
-                  alt={displayTitle || "Augen Collection"}
+                  src={heroImage}
+                  alt={heroTitle || "Augen Collection"}
                   fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  className="object-cover hidden md:block transition-transform duration-700 group-hover:scale-105"
+                  sizes="100vw"
+                  priority={display.sort_order === 1}
+                />
+                <Image
+                  src={heroMobileImage}
+                  alt={heroTitle || "Augen Collection"}
+                  fill
+                  className="object-cover md:hidden transition-transform duration-700 group-hover:scale-105"
                   sizes="100vw"
                   priority={display.sort_order === 1}
                 />
@@ -107,15 +129,15 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                     className="mb-6 filter brightness-0 invert"
                   />
                   <h2 className="text-4xl md:text-6xl font-bold mb-4 animate-fade-in">
-                    {displayTitle}
+                    {heroTitle}
                   </h2>
-                  {displaySlogan && (
+                  {heroSlogan && (
                     <p className="text-xl md:text-2xl mb-8 text-gray-200 animate-fade-in animation-delay-200">
-                      {displaySlogan}
+                      {heroSlogan}
                     </p>
                   )}
                   <Link
-                    href={`/products?parent=${display.category_key}`}
+                    href={`/products?parent=${display.category_key}&sub=high_quality`}
                     className="inline-flex items-center gap-2 bg-white text-black px-8 py-4 rounded-lg font-bold text-lg hover:bg-gray-100 transition-all duration-300 hover:scale-105 shadow-xl"
                   >
                     {primaryCta}
@@ -137,9 +159,13 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
               </div>
             </div>
 
-            <div className={`grid gap-4 md:gap-6 ${subcats.length < 3 ? "grid-cols-2" : "sm:grid-cols-3 grid-cols-2"}`}>
-              {subcats.map(([key, subcat], index) => {
+            {/* Other Subcategories Grid */}
+            <div className={`grid gap-4 md:gap-6 ${otherSubcats.length < 3 ? "grid-cols-2" : "sm:grid-cols-3 grid-cols-2"}`}>
+              {otherSubcats.map(([key, subcat], index) => {
                 const card = getCardForSubcategory(display.category_key, key)
+                const parentTitle = isEnglish
+                  ? display.title_en || parentFallback?.name_en || display.title_ar
+                  : display.title_ar || parentFallback?.name_ar
 
                 return (
                   <Link
@@ -159,14 +185,14 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                         <>
                           <Image
                             src={card.image_url}
-                            alt={`${displayTitle} ${isEnglish ? subcat.name_en : subcat.name_ar}`}
+                            alt={`${parentTitle} ${isEnglish ? subcat.name_en : subcat.name_ar}`}
                             fill
                             className="object-cover hidden md:block"
                             sizes="(min-width: 768px) 33vw, 100vw"
                           />
                           <Image
                             src={card.mobile_image_url || card.image_url}
-                            alt={`${displayTitle} ${isEnglish ? subcat.name_en : subcat.name_ar}`}
+                            alt={`${parentTitle} ${isEnglish ? subcat.name_en : subcat.name_ar}`}
                             fill
                             className="object-cover md:hidden"
                             sizes="100vw"
@@ -191,7 +217,7 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                     <div className="relative h-full flex flex-col justify-end p-6 text-white">
                       <div>
                         <h3 className="text-2xl md:text-3xl font-bold mb-2 group-hover:translate-x-[-4px] transition-transform duration-300">
-                          {displayTitle} {isEnglish ? subcat.name_en : subcat.name_ar}
+                          {parentTitle} {isEnglish ? subcat.name_en : subcat.name_ar}
                         </h3>
                         <p className="text-gray-300 text-sm md:text-base mb-4 group-hover:text-white transition-colors duration-300">
                           {isEnglish ? subcat.description_en : subcat.description_ar}

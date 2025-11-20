@@ -481,14 +481,14 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       <Share2 className="w-4 h-4" />
                       Quick Share
                     </Button>
-                    <Button
+                    {/* <Button
                       size="sm"
                       className="gap-2"
                       onClick={() => setIsShareModalOpen(true)}
                     >
                       <Share2 className="w-4 h-4" />
                       Share Options
-                    </Button>
+                    </Button> */}
                   </div>
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
