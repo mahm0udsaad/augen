@@ -216,7 +216,7 @@ export default function CheckoutBottomSheet({
 
               <div className="space-y-2">
                 <Label htmlFor="address" className="text-base">
-                  Address (optional)
+                  Address <span className="text-destructive">*</span>
                 </Label>
                 <Textarea
                   id="address"

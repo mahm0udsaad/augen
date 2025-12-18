@@ -35,6 +35,7 @@ export default function BottomNav() {
     { href: "/", label: "Home", icon: "home" },
     { href: "/categories", label: "Products", icon: "grid" },
     { href: "/favorites", label: "Favorites", icon: "heart" },
+    { href: "/orders", label: "Orders", icon: "orders" },
     { href: "/cart", label: "Cart", icon: "cart" },
     { href: "/contact", label: "Contact", icon: "chat" },
   ]
@@ -85,6 +86,12 @@ export default function BottomNav() {
               {item.icon === "heart" && (
                 <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 6 4 4 6.5 4c1.74 0 3.41.81 4.5 2.09C12.09 4.81 13.76 4 15.5 4 18 4 20 6 20 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z" />
+                </svg>
+              )}
+              {item.icon === "orders" && (
+                <svg className="w-6 h-6" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M7 4V2C7 1.45 7.45 1 8 1H16C16.55 1 17 1.45 17 2V4H20C20.55 4 21 4.45 21 5S20.55 6 20 6H19V19C19 20.1 18.1 21 17 21H7C5.9 21 5 20.1 5 19V6H4C3.45 6 3 5.55 3 5S3.45 4 4 4H7ZM9 3V4H15V3H9ZM7 6V19H17V6H7Z" />
+                  <path d="M9 8H11V17H9V8ZM13 8H15V17H13V8Z" />
                 </svg>
               )}
               {item.icon === "chat" && (

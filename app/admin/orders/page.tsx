@@ -20,8 +20,18 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, Package, Eye, CheckCircle, XCircle, Clock, Truck } from 'lucide-react';
+import { Loader2, Package, Eye, CheckCircle, XCircle, Clock, Truck, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 
 interface OrderItem {
   id: string;
@@ -97,6 +107,8 @@ export default function AdminOrdersPage() {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [isUpdating, setIsUpdating] = useState(false);
+  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const normalizeOrder = (order: any): Order => ({
     ...order,
@@ -182,6 +194,31 @@ export default function AdminOrdersPage() {
       toast.error('حدث خطأ أثناء تحديث الطلب');
     } finally {
       setIsUpdating(false);
+    }
+  };
+
+  const deleteOrder = async (orderId: string) => {
+    try {
+      setIsDeleting(true);
+      const response = await fetch(`/api/orders/${orderId}`, {
+        method: 'DELETE',
+      });
+
+      const data = await response.json();
+
+      if (response.ok) {
+        toast.success('تم حذف الطلب بنجاح');
+        fetchOrders();
+        setIsDetailOpen(false);
+        setOrderToDelete(null);
+      } else {
+        toast.error('فشل حذف الطلب');
+      }
+    } catch (error) {
+      console.error('Error deleting order:', error);
+      toast.error('حدث خطأ أثناء حذف الطلب');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -366,6 +403,14 @@ export default function AdminOrdersPage() {
                         >
                           واتساب
                         </Button>
+                        <Button
+                          size="sm"
+                          variant="destructive"
+                          onClick={() => setOrderToDelete(order)}
+                        >
+                          <Trash2 className="w-4 h-4 ml-1" />
+                          حذف
+                        </Button>
                       </div>
                     </div>
                   </div>
@@ -441,23 +486,35 @@ export default function AdminOrdersPage() {
                 {/* Order Status */}
                 <div>
                   <h3 className="font-bold text-lg mb-3">حالة الطلب</h3>
-                  <Select
-                    value={selectedOrder.status}
-                    onValueChange={(value) => updateOrderStatus(selectedOrder.id, value)}
-                    disabled={isUpdating}
-                  >
-                    <SelectTrigger className="w-full">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">قيد الانتظار</SelectItem>
-                      <SelectItem value="confirmed">مؤكد</SelectItem>
-                      <SelectItem value="processing">قيد المعالجة</SelectItem>
-                      <SelectItem value="shipped">تم الشحن</SelectItem>
-                      <SelectItem value="delivered">تم التوصيل</SelectItem>
-                      <SelectItem value="cancelled">ملغي</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <div className="flex gap-3">
+                    <div className="flex-1">
+                      <Select
+                        value={selectedOrder.status}
+                        onValueChange={(value) => updateOrderStatus(selectedOrder.id, value)}
+                        disabled={isUpdating}
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="pending">قيد الانتظار</SelectItem>
+                          <SelectItem value="confirmed">مؤكد</SelectItem>
+                          <SelectItem value="processing">قيد المعالجة</SelectItem>
+                          <SelectItem value="shipped">تم الشحن</SelectItem>
+                          <SelectItem value="delivered">تم التوصيل</SelectItem>
+                          <SelectItem value="cancelled">ملغي</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                    <Button
+                      variant="destructive"
+                      onClick={() => setOrderToDelete(selectedOrder)}
+                      disabled={isDeleting}
+                    >
+                      <Trash2 className="w-4 h-4 ml-1" />
+                      حذف الطلب
+                    </Button>
+                  </div>
                 </div>
 
                 {/* Order Items */}
@@ -534,6 +591,28 @@ export default function AdminOrdersPage() {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!orderToDelete} onOpenChange={() => setOrderToDelete(null)}>
+        <AlertDialogContent dir="rtl">
+          <AlertDialogHeader>
+            <AlertDialogTitle>تأكيد حذف الطلب</AlertDialogTitle>
+            <AlertDialogDescription>
+              هل أنت متأكد من حذف الطلب {orderToDelete?.order_number}؟ هذا الإجراء لا يمكن التراجع عنه وسيتم حذف جميع بيانات الطلب نهائياً.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isDeleting}>إلغاء</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => orderToDelete && deleteOrder(orderToDelete.id)}
+              disabled={isDeleting}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isDeleting ? 'جاري الحذف...' : 'حذف الطلب'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

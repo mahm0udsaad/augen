@@ -16,6 +16,7 @@ import { useMediaQuery } from '@/hooks/use-media-query';
 import { useShippingCities } from '@/hooks/use-shipping-cities';
 
 const CUSTOMER_INFO_STORAGE_KEY = 'augen_checkout_info';
+const USER_ORDERS_STORAGE_KEY = 'augen_user_orders';
 
 export default function CartPage() {
   const { items, removeFromCart, updateQuantity, clearCart, getTotalPrice } = useCart();
@@ -96,6 +97,10 @@ export default function CartPage() {
       toast.error('Please enter your name and WhatsApp number');
       return;
     }
+    if (!customerInfo.address.trim()) {
+      toast.error('Please enter your address');
+      return;
+    }
     if (!customerInfo.shippingCityId) {
       toast.error('Please select a shipping city');
       return;
@@ -143,6 +148,35 @@ export default function CartPage() {
       setIsOrderSubmitted(true);
       clearCart();
       toast.success('Order created successfully!');
+
+      // Save order to user's localStorage history
+      try {
+        const existingOrders = JSON.parse(localStorage.getItem(USER_ORDERS_STORAGE_KEY) || '[]');
+        const orderHistoryItem = {
+          id: data.order.id,
+          order_number: data.order.order_number,
+          customer_name: customerInfo.name,
+          customer_whatsapp: customerInfo.whatsapp,
+          customer_email: customerInfo.email,
+          customer_address: customerInfo.address,
+          total_amount: data.order.total_amount,
+          items_total_amount: data.order.items_total_amount,
+          shipping_fee: data.order.shipping_fee,
+          status: data.order.status,
+          created_at: data.order.created_at,
+          items: data.order.items.map((item: any) => ({
+            product_name: item.product_name,
+            product_image: item.product_image,
+            quantity: item.quantity,
+            unit_price: item.unit_price,
+            total_price: item.total_price,
+          })),
+        };
+        existingOrders.unshift(orderHistoryItem); // Add to beginning
+        localStorage.setItem(USER_ORDERS_STORAGE_KEY, JSON.stringify(existingOrders));
+      } catch (error) {
+        console.error('Error saving order to history:', error);
+      }
     } catch (error: any) {
       console.error('Error submitting order:', error);
       toast.error(error.message || 'An error occurred while creating the order');
@@ -417,7 +451,9 @@ export default function CartPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="address">Address (optional)</Label>
+                    <Label htmlFor="address">
+                      Address <span className="text-destructive">*</span>
+                    </Label>
                     <Textarea
                       id="address"
                       value={customerInfo.address}
