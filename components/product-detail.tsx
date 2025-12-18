@@ -665,6 +665,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       fill
                       className="object-cover transition-opacity group-hover:opacity-80 duration-300"
                       sizes="(max-width: 768px) 50vw, 25vw"
+                      loading="lazy"
+                      quality={75}
                     />
                   </div>
                   <h3 className="text-xs md:text-base font-semibold text-foreground group-hover:text-accent transition-colors line-clamp-2">

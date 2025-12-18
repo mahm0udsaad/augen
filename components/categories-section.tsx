@@ -104,8 +104,10 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                   alt={heroTitle || "Augen Collection"}
                   fill
                   className="object-cover hidden md:block transition-transform duration-700 group-hover:scale-105"
-                  sizes="100vw"
+                  sizes="(min-width: 1024px) 100vw, 100vw"
                   priority={display.sort_order === 1}
+                  loading={display.sort_order === 1 ? "eager" : "lazy"}
+                  quality={85}
                 />
                 <Image
                   src={heroMobileImage}
@@ -114,6 +116,8 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                   className="object-cover md:hidden transition-transform duration-700 group-hover:scale-105"
                   sizes="100vw"
                   priority={display.sort_order === 1}
+                  loading={display.sort_order === 1 ? "eager" : "lazy"}
+                  quality={85}
                 />
               </div>
 
@@ -127,6 +131,8 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                     width={80} 
                     height={80}
                     className="mb-6 filter brightness-0 invert"
+                    loading="lazy"
+                    quality={90}
                   />
                   <h2 className="text-4xl md:text-6xl font-bold mb-4 animate-fade-in">
                     {heroTitle}
@@ -188,7 +194,9 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                             alt={`${parentTitle} ${isEnglish ? subcat.name_en : subcat.name_ar}`}
                             fill
                             className="object-cover hidden md:block"
-                            sizes="(min-width: 768px) 33vw, 100vw"
+                            sizes="(min-width: 1024px) 33vw, (min-width: 768px) 50vw, 100vw"
+                            loading="lazy"
+                            quality={80}
                           />
                           <Image
                             src={card.mobile_image_url || card.image_url}
@@ -196,6 +204,8 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                             fill
                             className="object-cover md:hidden"
                             sizes="100vw"
+                            loading="lazy"
+                            quality={80}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
                         </>
@@ -211,6 +221,8 @@ export default function CategoriesSection({ initialDisplays, subcategoryDisplays
                         width={50} 
                         height={50}
                         className="filter brightness-0 invert"
+                        loading="lazy"
+                        quality={90}
                       />
                     </div>
 

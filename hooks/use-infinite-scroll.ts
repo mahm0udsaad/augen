@@ -1,124 +1,104 @@
 "use client"
 
-import { useState, useEffect, useCallback, useRef } from 'react'
-import type { Product } from '@/lib/products'
-import type { PaginatedResponse, PaginationOptions } from '@/lib/product-service'
-import { getProductsPaginated, getProductsByCategoriesPaginated } from '@/lib/product-service'
-import type { ParentCategory, Subcategory } from '@/lib/constants'
+import { useState, useEffect, useCallback, useRef } from "react"
 
-interface UseInfiniteScrollOptions {
-  parentCategory?: ParentCategory
-  subcategory?: Subcategory
-  initialLimit?: number
-  loadMoreLimit?: number
+interface UseInfiniteScrollOptions<T> {
+  initialData?: T[]
+  fetchFn: (page: number, pageSize: number) => Promise<T[]>
+  pageSize?: number
+  threshold?: number
 }
 
-interface UseInfiniteScrollReturn {
-  products: Product[]
+interface UseInfiniteScrollReturn<T> {
+  data: T[]
   loading: boolean
-  loadingMore: boolean
-  error: string | null
   hasMore: boolean
+  error: Error | null
   loadMore: () => void
-  refresh: () => void
+  reset: () => void
+  observerRef: (node: HTMLDivElement | null) => void
 }
 
-export function useInfiniteScroll({
-  parentCategory,
-  subcategory,
-  initialLimit = 12,
-  loadMoreLimit = 12,
-}: UseInfiniteScrollOptions = {}): UseInfiniteScrollReturn {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+export function useInfiniteScroll<T>({
+  initialData = [],
+  fetchFn,
+  pageSize = 12,
+  threshold = 0.8,
+}: UseInfiniteScrollOptions<T>): UseInfiniteScrollReturn<T> {
+  const [data, setData] = useState<T[]>(initialData)
+  const [page, setPage] = useState(initialData.length > 0 ? 1 : 0)
+  const [loading, setLoading] = useState(false)
   const [hasMore, setHasMore] = useState(true)
-  const [page, setPage] = useState(1)
-  const isInitialLoad = useRef(true)
+  const [error, setError] = useState<Error | null>(null)
+  const observerTarget = useRef<HTMLDivElement | null>(null)
 
-  const fetchProducts = useCallback(async (
-    pageNum: number,
-    limit: number,
-    append: boolean = false
-  ): Promise<void> => {
+  const loadMore = useCallback(async () => {
+    if (loading || !hasMore) return
+
+    setLoading(true)
+    setError(null)
+
     try {
-      if (append) {
-        setLoadingMore(true)
-      } else {
-        setLoading(true)
-      }
-      setError(null)
+      const nextPage = page + 1
+      const newData = await fetchFn(nextPage, pageSize)
 
-      let response: PaginatedResponse<Product>
-
-      if (parentCategory) {
-        response = await getProductsByCategoriesPaginated(
-          parentCategory,
-          subcategory,
-          { page: pageNum, limit }
-        )
-      } else {
-        response = await getProductsPaginated({ page: pageNum, limit })
+      if (newData.length === 0 || newData.length < pageSize) {
+        setHasMore(false)
       }
 
-      if (append) {
-        setProducts(prev => [...prev, ...response.data])
-      } else {
-        setProducts(response.data)
-      }
-
-      setHasMore(response.hasMore)
+      setData((prev) => [...prev, ...newData])
+      setPage(nextPage)
     } catch (err) {
-      console.error('Error fetching products:', err)
-      setError(err instanceof Error ? err.message : 'Failed to load products')
+      setError(err instanceof Error ? err : new Error("Failed to load more"))
+      console.error("Error loading more data:", err)
     } finally {
       setLoading(false)
-      setLoadingMore(false)
     }
-  }, [parentCategory, subcategory])
+  }, [loading, hasMore, page, pageSize, fetchFn])
 
-  const loadMore = useCallback(() => {
-    if (!loadingMore && hasMore) {
-      const nextPage = page + 1
-      setPage(nextPage)
-      fetchProducts(nextPage, loadMoreLimit, true)
-    }
-  }, [page, loadingMore, hasMore, loadMoreLimit, fetchProducts])
-
-  const refresh = useCallback(() => {
-    setPage(1)
-    setProducts([])
-    setError(null)
+  const reset = useCallback(() => {
+    setData(initialData)
+    setPage(initialData.length > 0 ? 1 : 0)
     setHasMore(true)
-    fetchProducts(1, initialLimit, false)
-  }, [initialLimit, fetchProducts])
-
-  // Initial load
-  useEffect(() => {
-    if (isInitialLoad.current) {
-      fetchProducts(1, initialLimit, false)
-      isInitialLoad.current = false
-    }
-  }, [fetchProducts, initialLimit])
-
-  // Reset when filters change
-  useEffect(() => {
-    setPage(1)
-    setProducts([])
     setError(null)
-    setHasMore(true)
-    setLoading(true)
-    fetchProducts(1, initialLimit, false)
-  }, [parentCategory, subcategory, fetchProducts, initialLimit])
+  }, [initialData])
+
+  // Intersection Observer for automatic loading
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasMore && !loading) {
+          loadMore()
+        }
+      },
+      { threshold, rootMargin: "100px" }
+    )
+
+    const currentTarget = observerTarget.current
+
+    if (currentTarget) {
+      observer.observe(currentTarget)
+    }
+
+    return () => {
+      if (currentTarget) {
+        observer.unobserve(currentTarget)
+      }
+    }
+  }, [hasMore, loading, loadMore, threshold])
+
+  const observerRef = useCallback((node: HTMLDivElement | null) => {
+    observerTarget.current = node
+  }, [])
 
   return {
-    products,
+    data,
     loading,
-    loadingMore,
-    error,
     hasMore,
+    error,
     loadMore,
-    refresh,
+    reset,
+    observerRef,
   }
 }
+

@@ -220,6 +220,8 @@ export default function ProductMediaCarousel({
             className="object-cover"
             sizes="(max-width: 768px) 100vw, 50vw"
             priority={currentIndex === 0}
+            loading={currentIndex === 0 ? "eager" : "lazy"}
+            quality={85}
           />
         )}
 
@@ -275,6 +277,8 @@ export default function ProductMediaCarousel({
                   fill
                   className="object-cover"
                   sizes="64px"
+                  loading="lazy"
+                  quality={60}
                 />
               )}
             </button>
@@ -359,6 +363,8 @@ export default function ProductMediaCarousel({
                   className="object-contain"
                   sizes="100vw"
                   priority
+                  loading="eager"
+                  quality={95}
                 />
               )}
 

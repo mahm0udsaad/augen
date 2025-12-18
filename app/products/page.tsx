@@ -1,11 +1,10 @@
 "use client"
 
-import { useEffect, useMemo, useState, Suspense } from "react"
+import { useEffect, useMemo, useState, Suspense, useCallback } from "react"
 import { useSearchParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
-import InfiniteScroll from "@/components/infinite-scroll"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import CheckoutBottomSheet from "@/components/checkout-bottom-sheet"
@@ -13,6 +12,7 @@ import { useMediaQuery } from "@/hooks/use-media-query"
 import { useShippingCities } from "@/hooks/use-shipping-cities"
 import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
 import type { Product } from "@/lib/products"
+import { getProductsByCategoriesPaginated } from "@/lib/product-service"
 import type { ParentCategory, Subcategory } from "@/lib/constants"
 import { toast } from "sonner"
 
@@ -21,23 +21,6 @@ const CUSTOMER_INFO_STORAGE_KEY = "augen_checkout_info"
 function ProductsPageContent() {
   const searchParams = useSearchParams()
   const isDesktop = useMediaQuery("(min-width: 768px)")
-
-  const parentFilter = (searchParams.get("parent") as ParentCategory | null) ?? null
-  const subFilter = (searchParams.get("sub") as Subcategory | null) ?? null
-
-  const {
-    products,
-    loading,
-    loadingMore,
-    error,
-    hasMore,
-    loadMore
-  } = useInfiniteScroll({
-    parentCategory: parentFilter || undefined,
-    subcategory: subFilter || undefined,
-    initialLimit: 12,
-    loadMoreLimit: 12,
-  })
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isOrderSubmitted, setIsOrderSubmitted] = useState(false)
@@ -57,6 +40,34 @@ function ProductsPageContent() {
     notes: "",
     shippingCityId: "",
   })
+
+  const parentFilter = (searchParams.get("parent") as ParentCategory | null) ?? null
+  const subFilter = (searchParams.get("sub") as Subcategory | null) ?? null
+
+  // Fetch function for infinite scroll
+  const fetchProducts = useCallback(
+    async (page: number, pageSize: number) => {
+      return await getProductsByCategoriesPaginated(page, pageSize, parentFilter ?? undefined, subFilter ?? undefined)
+    },
+    [parentFilter, subFilter]
+  )
+
+  const {
+    data: products,
+    loading,
+    hasMore,
+    observerRef,
+    reset,
+  } = useInfiniteScroll<Product>({
+    initialData: [],
+    fetchFn: fetchProducts,
+    pageSize: 12,
+  })
+
+  // Reset infinite scroll when filters change
+  useEffect(() => {
+    reset()
+  }, [parentFilter, subFilter, reset])
 
   useEffect(() => {
     try {
@@ -96,21 +107,6 @@ function ProductsPageContent() {
     }
   }, [isLoadingShippingCities, shippingCities])
 
-  // Filter products client-side for additional filtering if needed
-  const filteredProducts = useMemo(() => {
-    return products.filter((product) => {
-      if (subFilter) {
-        // Always respect parent category when filtering by subcategory
-        if (parentFilter) {
-          return product.subcategory === subFilter && product.parent_category === parentFilter
-        }
-        return product.subcategory === subFilter
-      }
-      // Exclude high_quality products when filtering by parent category only
-      if (parentFilter) return product.parent_category === parentFilter && product.subcategory !== 'high_quality'
-      return true
-    })
-  }, [products, parentFilter, subFilter])
 
   const handleOrderNow = (product: Product) => {
     setSelectedProduct(product)
@@ -194,29 +190,18 @@ function ProductsPageContent() {
           )}
         </div>
 
-        {error ? (
-          <div className="text-center py-24">
-            <p className="text-red-600 mb-4">{error}</p>
-            <Button onClick={() => window.location.reload()}>
-              Try Again
-            </Button>
-          </div>
-        ) : filteredProducts.length === 0 && !loading ? (
+        {products.length === 0 && !loading ? (
           <div className="text-center py-24">
             <p className="text-lg">No matching products found at the moment</p>
           </div>
         ) : (
-          <InfiniteScroll
-            hasMore={hasMore}
-            loading={loadingMore}
-            onLoadMore={loadMore}
-          >
+          <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-8">
-              {filteredProducts.map((product, index) => (
+              {products.map((product, index) => (
                 <div
                   key={product.id}
                   className="animate-slide-up flex flex-col"
-                  style={{ animationDelay: `${index * 50}ms` }}
+                  style={{ animationDelay: `${Math.min(index, 11) * 80}ms` }}
                 >
                   <ProductCard product={product} />
                   <div className="mt-2">
@@ -232,7 +217,25 @@ function ProductsPageContent() {
                 </div>
               ))}
             </div>
-          </InfiniteScroll>
+
+            {/* Infinite scroll trigger */}
+            {hasMore && (
+              <div ref={observerRef} className="flex justify-center items-center py-8 min-h-[100px]">
+                {loading && (
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="h-8 w-8 animate-spin rounded-full border-4 border-dashed border-muted-foreground" />
+                    <p className="text-sm text-muted-foreground">Loading more products...</p>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {!hasMore && products.length > 0 && (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">You've reached the end of our collection</p>
+              </div>
+            )}
+          </>
         )}
       </div>
 
