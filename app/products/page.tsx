@@ -5,13 +5,14 @@ import { useSearchParams } from "next/navigation"
 import Header from "@/components/header"
 import Footer from "@/components/footer"
 import ProductCard from "@/components/product-card"
+import InfiniteScroll from "@/components/infinite-scroll"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import CheckoutBottomSheet from "@/components/checkout-bottom-sheet"
 import { useMediaQuery } from "@/hooks/use-media-query"
 import { useShippingCities } from "@/hooks/use-shipping-cities"
+import { useInfiniteScroll } from "@/hooks/use-infinite-scroll"
 import type { Product } from "@/lib/products"
-import { getAllProducts } from "@/lib/product-service"
 import type { ParentCategory, Subcategory } from "@/lib/constants"
 import { toast } from "sonner"
 
@@ -21,8 +22,22 @@ function ProductsPageContent() {
   const searchParams = useSearchParams()
   const isDesktop = useMediaQuery("(min-width: 768px)")
 
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
+  const parentFilter = (searchParams.get("parent") as ParentCategory | null) ?? null
+  const subFilter = (searchParams.get("sub") as Subcategory | null) ?? null
+
+  const {
+    products,
+    loading,
+    loadingMore,
+    error,
+    hasMore,
+    loadMore
+  } = useInfiniteScroll({
+    parentCategory: parentFilter || undefined,
+    subcategory: subFilter || undefined,
+    initialLimit: 12,
+    loadMoreLimit: 12,
+  })
 
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false)
   const [isOrderSubmitted, setIsOrderSubmitted] = useState(false)
@@ -42,21 +57,6 @@ function ProductsPageContent() {
     notes: "",
     shippingCityId: "",
   })
-
-  useEffect(() => {
-    const load = async () => {
-      try {
-        setLoading(true)
-        const data = await getAllProducts()
-        setProducts(data)
-      } catch (e) {
-        console.error(e)
-      } finally {
-        setLoading(false)
-      }
-    }
-    load()
-  }, [])
 
   useEffect(() => {
     try {
@@ -96,9 +96,7 @@ function ProductsPageContent() {
     }
   }, [isLoadingShippingCities, shippingCities])
 
-  const parentFilter = (searchParams.get("parent") as ParentCategory | null) ?? null
-  const subFilter = (searchParams.get("sub") as Subcategory | null) ?? null
-
+  // Filter products client-side for additional filtering if needed
   const filteredProducts = useMemo(() => {
     return products.filter((product) => {
       if (subFilter) {
@@ -196,36 +194,45 @@ function ProductsPageContent() {
           )}
         </div>
 
-        {loading ? (
-          <div className="flex items-center justify-center py-24">
-            <div className="h-8 w-8 animate-spin rounded-full border-4 border-dashed border-muted-foreground" />
+        {error ? (
+          <div className="text-center py-24">
+            <p className="text-red-600 mb-4">{error}</p>
+            <Button onClick={() => window.location.reload()}>
+              Try Again
+            </Button>
           </div>
-        ) : filteredProducts.length === 0 ? (
+        ) : filteredProducts.length === 0 && !loading ? (
           <div className="text-center py-24">
             <p className="text-lg">No matching products found at the moment</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-8">
-            {filteredProducts.map((product, index) => (
-              <div
-                key={product.id}
-                className="animate-slide-up flex flex-col"
-                style={{ animationDelay: `${index * 80}ms` }}
-              >
-                <ProductCard product={product} />
-                <div className="mt-2">
-                  <Button
-                    className="w-full"
-                    size="lg"
-                    disabled={product.quantity !== undefined && product.quantity <= 0}
-                    onClick={() => handleOrderNow(product)}
-                  >
-                    Order Now
-                  </Button>
+          <InfiniteScroll
+            hasMore={hasMore}
+            loading={loadingMore}
+            onLoadMore={loadMore}
+          >
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-8">
+              {filteredProducts.map((product, index) => (
+                <div
+                  key={product.id}
+                  className="animate-slide-up flex flex-col"
+                  style={{ animationDelay: `${index * 50}ms` }}
+                >
+                  <ProductCard product={product} />
+                  <div className="mt-2">
+                    <Button
+                      className="w-full"
+                      size="lg"
+                      disabled={product.quantity !== undefined && product.quantity <= 0}
+                      onClick={() => handleOrderNow(product)}
+                    >
+                      Order Now
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          </InfiniteScroll>
         )}
       </div>
 

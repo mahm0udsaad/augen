@@ -16,6 +16,19 @@ export interface SupabaseProduct {
   product_images?: any[]
 }
 
+export interface PaginationOptions {
+  page?: number
+  limit?: number
+}
+
+export interface PaginatedResponse<T> {
+  data: T[]
+  total: number
+  page: number
+  limit: number
+  hasMore: boolean
+}
+
 // Convert Supabase product to app Product type
 function toProduct(dbProduct: any): Product {
   return {
@@ -60,7 +73,7 @@ export interface ProductImageInput {
   tiger_type?: string | null
 }
 
-// Get all products
+// Get all products (legacy - loads all at once)
 export async function getAllProducts(): Promise<Product[]> {
   const { data, error } = await supabase
     .from('products')
@@ -86,6 +99,58 @@ export async function getAllProducts(): Promise<Product[]> {
   }
 
   return (data || []).map(toProduct)
+}
+
+// Get products with pagination
+export async function getProductsPaginated(options: PaginationOptions = {}): Promise<PaginatedResponse<Product>> {
+  const { page = 1, limit = 12 } = options
+  const offset = (page - 1) * limit
+
+  // First get the total count
+  const { count, error: countError } = await supabase
+    .from('products')
+    .select('*', { count: 'exact', head: true })
+
+  if (countError) {
+    console.error('Error fetching product count:', countError)
+    throw countError
+  }
+
+  // Then get the paginated data
+  const { data, error } = await supabase
+    .from('products')
+    .select(`
+      *,
+      product_images (
+        id,
+        product_id,
+        image_url,
+        color_name,
+        color_hex,
+        sort_order,
+        created_at,
+        color_type,
+        tiger_type
+      )
+    `)
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('Error fetching paginated products:', error)
+    throw error
+  }
+
+  const total = count || 0
+  const products = (data || []).map(toProduct)
+
+  return {
+    data: products,
+    total,
+    page,
+    limit,
+    hasMore: offset + limit < total,
+  }
 }
 
 // Get product by ID
@@ -181,6 +246,76 @@ export async function getProductsByCategories(
   }
 
   return (data || []).map(toProduct)
+}
+
+// Get products by categories with pagination
+export async function getProductsByCategoriesPaginated(
+  parentCategory: ParentCategory,
+  subcategory?: Subcategory,
+  options: PaginationOptions = {}
+): Promise<PaginatedResponse<Product>> {
+  const { page = 1, limit = 12 } = options
+  const offset = (page - 1) * limit
+
+  // Build the base query for counting
+  let countQuery = supabase
+    .from('products')
+    .select('*', { count: 'exact', head: true })
+    .eq('parent_category', parentCategory)
+
+  if (subcategory) {
+    countQuery = countQuery.eq('subcategory', subcategory)
+  }
+
+  const { count, error: countError } = await countQuery
+
+  if (countError) {
+    console.error('Error fetching product count by categories:', countError)
+    throw countError
+  }
+
+  // Build the query for data
+  let dataQuery = supabase
+    .from('products')
+    .select(`
+      *,
+      product_images (
+        id,
+        product_id,
+        image_url,
+        color_name,
+        color_hex,
+        sort_order,
+        created_at,
+        color_type,
+        tiger_type
+      )
+    `)
+    .eq('parent_category', parentCategory)
+
+  if (subcategory) {
+    dataQuery = dataQuery.eq('subcategory', subcategory)
+  }
+
+  const { data, error } = await dataQuery
+    .order('created_at', { ascending: false })
+    .range(offset, offset + limit - 1)
+
+  if (error) {
+    console.error('Error fetching paginated products by categories:', error)
+    throw error
+  }
+
+  const total = count || 0
+  const products = (data || []).map(toProduct)
+
+  return {
+    data: products,
+    total,
+    page,
+    limit,
+    hasMore: offset + limit < total,
+  }
 }
 
 // Create product
