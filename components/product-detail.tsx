@@ -43,6 +43,15 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     address: "",
     notes: "",
     shippingCityId: "",
+    // New Shopify-style fields
+    emailOrPhone: "",
+    emailMarketing: false,
+    firstName: "",
+    lastName: "",
+    apartment: "",
+    city: "",
+    postalCode: "",
+    country: "Egypt",
   })
   const [shareUrl, setShareUrl] = useState("")
   const [copySuccess, setCopySuccess] = useState(false)
@@ -301,33 +310,93 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const formatPrice = (price: number) =>
     new Intl.NumberFormat("en-US", { style: "currency", currency: "EGP" }).format(price)
 
+  // Helper function to transform customerInfo to API format
+  const transformCustomerInfoForAPI = (info: typeof customerInfo) => {
+    // Build full name from firstName/lastName or use existing name
+    const fullName = info.firstName && info.lastName
+      ? `${info.firstName} ${info.lastName}`.trim()
+      : info.name || '';
+
+    // Build address with apartment if provided
+    let fullAddress = info.address || '';
+    if (info.apartment) {
+      fullAddress = fullAddress ? `${fullAddress}, ${info.apartment}` : info.apartment;
+    }
+
+    // Detect email or phone from emailOrPhone field
+    let email = info.email || '';
+    let whatsapp = info.whatsapp || '';
+    
+    if (info.emailOrPhone) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      const phoneRegex = /^[+]?[0-9\s\-()]{10,}$/;
+      const cleaned = info.emailOrPhone.trim();
+      
+      if (emailRegex.test(cleaned)) {
+        email = cleaned;
+      } else if (phoneRegex.test(cleaned.replace(/\s/g, ''))) {
+        whatsapp = cleaned.replace(/\s/g, '');
+      }
+    }
+
+    return {
+      customerName: fullName,
+      customerWhatsapp: whatsapp,
+      customerEmail: email,
+      customerAddress: fullAddress,
+      notes: info.notes || '',
+      shippingCityId: info.shippingCityId || '',
+    };
+  };
+
   const handleSubmitOrder = async () => {
-    if (!customerInfo.name || !customerInfo.whatsapp) {
-      toast.error("Please enter your name and WhatsApp number")
+    // Validate new structure
+    const firstName = customerInfo.firstName || (customerInfo.name ? customerInfo.name.split(' ')[0] : '');
+    const lastName = customerInfo.lastName || (customerInfo.name ? customerInfo.name.split(' ').slice(1).join(' ') : '');
+    
+    if (!firstName || !lastName) {
+      toast.error("Please enter your first and last name")
       return
     }
+    
+    if (!customerInfo.address?.trim()) {
+      toast.error("Please enter your address")
+      return
+    }
+    
     if (!customerInfo.shippingCityId) {
-      toast.error("Please select a shipping city")
+      toast.error("Please select a governorate")
       return
     }
-    const whatsappRegex = /^[+]?[0-9]{10,15}$/
-    if (!whatsappRegex.test(customerInfo.whatsapp.replace(/\s/g, ""))) {
-      toast.error("Invalid WhatsApp number")
+
+    // Validate contact info (email or phone)
+    const hasEmail = customerInfo.email || (customerInfo.emailOrPhone && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(customerInfo.emailOrPhone));
+    const hasPhone = customerInfo.whatsapp || (customerInfo.emailOrPhone && /^[+]?[0-9\s\-()]{10,}$/.test(customerInfo.emailOrPhone.replace(/\s/g, '')));
+    
+    if (!hasEmail && !hasPhone) {
+      toast.error("Please enter your email or mobile phone number")
       return
+    }
+
+    // Validate WhatsApp number if provided
+    const whatsappValue = customerInfo.whatsapp || (customerInfo.emailOrPhone && /^[+]?[0-9\s\-()]{10,}$/.test(customerInfo.emailOrPhone.replace(/\s/g, '')) ? customerInfo.emailOrPhone.replace(/\s/g, '') : '');
+    if (whatsappValue) {
+      const whatsappRegex = /^[+]?[0-9]{10,15}$/;
+      if (!whatsappRegex.test(whatsappValue.replace(/\s/g, ''))) {
+        toast.error("Invalid phone number")
+        return
+      }
     }
 
     setIsSubmitting(true)
     try {
+      const apiData = transformCustomerInfoForAPI(customerInfo);
+      
       const response = await fetch("/api/orders", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          customerName: customerInfo.name,
-          customerWhatsapp: customerInfo.whatsapp,
-          customerEmail: customerInfo.email,
-          customerAddress: customerInfo.address,
-          notes: customerInfo.notes,
-          shippingCityId: customerInfo.shippingCityId,
+          ...apiData,
           items: [
             {
               productId: product.id,

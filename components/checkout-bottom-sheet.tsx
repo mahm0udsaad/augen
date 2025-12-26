@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Select,
   SelectContent,
@@ -26,12 +27,21 @@ interface CheckoutBottomSheetProps {
   isOpen: boolean
   onClose: () => void
   customerInfo: {
-    name: string
-    whatsapp: string
-    email: string
-    address: string
-    notes: string
+    name?: string
+    whatsapp?: string
+    email?: string
+    address?: string
+    notes?: string
     shippingCityId?: string
+    // New Shopify-style fields
+    emailOrPhone?: string
+    emailMarketing?: boolean
+    firstName?: string
+    lastName?: string
+    apartment?: string
+    city?: string
+    postalCode?: string
+    country?: string
   }
   onCustomerInfoChange: (info: any) => void
   onSubmitOrder: () => void
@@ -96,6 +106,66 @@ export default function CheckoutBottomSheet({
   const shippingSelectionDisabled =
     isLoadingShippingCities || shippingCities.length === 0
 
+  // Helper function to detect if input is email or phone
+  const detectInputType = (value: string): 'email' | 'phone' | null => {
+    if (!value) return null
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+    const phoneRegex = /^[+]?[0-9\s\-()]{10,}$/
+    
+    if (emailRegex.test(value)) return 'email'
+    if (phoneRegex.test(value.replace(/\s/g, ''))) return 'phone'
+    return null
+  }
+
+  // Handle emailOrPhone change - auto-detect and populate appropriate fields
+  const handleEmailOrPhoneChange = (value: string) => {
+    const inputType = detectInputType(value)
+    const updatedInfo: typeof customerInfo = { ...customerInfo, emailOrPhone: value }
+    
+    if (inputType === 'email') {
+      updatedInfo.email = value
+      // Clear whatsapp if user switches to email
+      if (!customerInfo.whatsapp) {
+        updatedInfo.whatsapp = ''
+      }
+    } else if (inputType === 'phone') {
+      updatedInfo.whatsapp = value.replace(/\s/g, '')
+      // Clear email if user switches to phone
+      if (!customerInfo.email) {
+        updatedInfo.email = ''
+      }
+    }
+    
+    onCustomerInfoChange(updatedInfo)
+  }
+
+  // Get current emailOrPhone value (prioritize emailOrPhone, fallback to email or whatsapp)
+  const getEmailOrPhoneValue = () => {
+    if (customerInfo.emailOrPhone) return customerInfo.emailOrPhone
+    if (customerInfo.email) return customerInfo.email
+    if (customerInfo.whatsapp) return customerInfo.whatsapp
+    return ''
+  }
+
+  // Get current name values (support both old and new structure)
+  const getFirstName = () => {
+    if (customerInfo.firstName) return customerInfo.firstName
+    if (customerInfo.name) {
+      const parts = customerInfo.name.split(' ')
+      return parts[0] || ''
+    }
+    return ''
+  }
+
+  const getLastName = () => {
+    if (customerInfo.lastName) return customerInfo.lastName
+    if (customerInfo.name) {
+      const parts = customerInfo.name.split(' ')
+      return parts.slice(1).join(' ') || ''
+    }
+    return ''
+  }
+
   const sheet = (
     <>
       {/* Overlay */}
@@ -158,134 +228,200 @@ export default function CheckoutBottomSheet({
               </div>
             </div>
           ) : (
-            <div className="space-y-4 py-4">
-              <div className="space-y-2">
-                <Label htmlFor="name" className="text-base">
-                  Full Name <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="name"
-                  value={customerInfo.name}
-                  onChange={(e) =>
-                    onCustomerInfoChange({ ...customerInfo, name: e.target.value })
-                  }
-                  placeholder="Enter your full name"
-                  required
-                  className="min-h-[48px] text-base"
-                  autoComplete="name"
-                />
+            <div className="space-y-6 py-4">
+              {/* Contact Information Section */}
+              <div className="space-y-4">
+                <div className="space-y-2">
+                  <Input
+                    id="emailOrPhone"
+                    type="text"
+                    value={getEmailOrPhoneValue()}
+                    onChange={(e) => handleEmailOrPhoneChange(e.target.value)}
+                    placeholder="Email or mobile phone number"
+                    className="min-h-[48px] text-base"
+                    autoComplete="email"
+                  />
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Checkbox
+                    id="emailMarketing"
+                    checked={customerInfo.emailMarketing ?? false}
+                    onCheckedChange={(checked) =>
+                      onCustomerInfoChange({ ...customerInfo, emailMarketing: checked === true })
+                    }
+                  />
+                  <Label
+                    htmlFor="emailMarketing"
+                    className="text-sm font-normal cursor-pointer"
+                  >
+                    Email me with news and offers
+                  </Label>
+                </div>
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="whatsapp" className="text-base">
-                  WhatsApp Number <span className="text-destructive">*</span>
-                </Label>
-                <Input
-                  id="whatsapp"
-                  type="tel"
-                  value={customerInfo.whatsapp}
-                  onChange={(e) =>
-                    onCustomerInfoChange({ ...customerInfo, whatsapp: e.target.value })
-                  }
-                  placeholder="+20 1234567890"
-                  required
-                  className="min-h-[48px] text-base"
-                  autoComplete="tel"
-                />
-                <p className="text-xs text-muted-foreground">
-                  We will contact you via this number
-                </p>
-              </div>
+              {/* Delivery Information Section */}
+              <div className="space-y-4">
+                <h3 className="text-base font-semibold">Delivery</h3>
+                
+                <div className="space-y-2">
+                  <Label htmlFor="country" className="text-base">
+                    Country/Region
+                  </Label>
+                  <Select
+                    value={customerInfo.country || "Egypt"}
+                    onValueChange={(value) =>
+                      onCustomerInfoChange({ ...customerInfo, country: value })
+                    }
+                  >
+                    <SelectTrigger className="min-h-[48px] text-base">
+                      <SelectValue placeholder="Select country" />
+                    </SelectTrigger>
+                    <SelectContent className="z-[70]" position="popper">
+                      <SelectItem value="Egypt">Egypt</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="email" className="text-base">
-                  Email (optional)
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={customerInfo.email}
-                  onChange={(e) =>
-                    onCustomerInfoChange({ ...customerInfo, email: e.target.value })
-                  }
-                  placeholder="example@domain.com"
-                  className="min-h-[48px] text-base"
-                  autoComplete="email"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="address" className="text-base">
-                  Address <span className="text-destructive">*</span>
-                </Label>
-                <Textarea
-                  id="address"
-                  value={customerInfo.address}
-                  onChange={(e) =>
-                    onCustomerInfoChange({ ...customerInfo, address: e.target.value })
-                  }
-                  placeholder="Enter your full address"
-                  rows={3}
-                  className="text-base resize-none"
-                  autoComplete="street-address"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="notes" className="text-base">
-                  Additional Notes (optional)
-                </Label>
-                <Textarea
-                  id="notes"
-                  value={customerInfo.notes}
-                  onChange={(e) =>
-                    onCustomerInfoChange({ ...customerInfo, notes: e.target.value })
-                  }
-                  placeholder="Any special notes for the order"
-                  rows={3}
-                  className="text-base resize-none"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label className="text-base">
-                  Shipping City <span className="text-destructive">*</span>
-                </Label>
-                <Select
-                  value={selectedShippingCityId}
-                  onValueChange={onShippingCityChange}
-                  disabled={shippingSelectionDisabled}
-                >
-                  <SelectTrigger className="min-h-[48px] text-base">
-                    <SelectValue
-                      placeholder={
-                        shippingSelectionDisabled
-                          ? "Shipping unavailable"
-                          : "Select your city"
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="firstName" className="text-base">
+                      First name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="firstName"
+                      value={getFirstName()}
+                      onChange={(e) =>
+                        onCustomerInfoChange({
+                          ...customerInfo,
+                          firstName: e.target.value,
+                          name: `${e.target.value} ${getLastName()}`.trim(),
+                        })
                       }
+                      placeholder="First name"
+                      required
+                      className="min-h-[48px] text-base"
+                      autoComplete="given-name"
                     />
-                  </SelectTrigger>
-                  <SelectContent className="z-[70]" position="popper">
-                    {shippingCities.map((city) => (
-                      <SelectItem key={city.id} value={city.id}>
-                        <div className="flex flex-col text-start">
-                          <span className="font-medium">{city.name_en}</span>
-                          <span className="text-xs text-muted-foreground">
-                            {(city.name_ar || '').trim() || city.name_en} • {egpFormatter.format(city.shipping_fee)}
-                          </span>
-                        </div>
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <p className="text-xs text-muted-foreground">
-                  Shipping fees vary by city and are added to your total
-                </p>
-                {shippingSelectionDisabled && (
-                  <p className="text-xs text-destructive">
-                    Shipping options are unavailable right now. Please try again later.
-                  </p>
-                )}
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="lastName" className="text-base">
+                      Last name <span className="text-destructive">*</span>
+                    </Label>
+                    <Input
+                      id="lastName"
+                      value={getLastName()}
+                      onChange={(e) =>
+                        onCustomerInfoChange({
+                          ...customerInfo,
+                          lastName: e.target.value,
+                          name: `${getFirstName()} ${e.target.value}`.trim(),
+                        })
+                      }
+                      placeholder="Last name"
+                      required
+                      className="min-h-[48px] text-base"
+                      autoComplete="family-name"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="address" className="text-base">
+                    Address <span className="text-destructive">*</span>
+                  </Label>
+                  <Input
+                    id="address"
+                    value={customerInfo.address || ''}
+                    onChange={(e) =>
+                      onCustomerInfoChange({ ...customerInfo, address: e.target.value })
+                    }
+                    placeholder="Address"
+                    required
+                    className="min-h-[48px] text-base"
+                    autoComplete="street-address"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="apartment" className="text-base">
+                    Apartment, suite, etc. (optional)
+                  </Label>
+                  <Input
+                    id="apartment"
+                    value={customerInfo.apartment || ''}
+                    onChange={(e) =>
+                      onCustomerInfoChange({ ...customerInfo, apartment: e.target.value })
+                    }
+                    placeholder="Apartment, suite, etc. (optional)"
+                    className="min-h-[48px] text-base"
+                    autoComplete="address-line2"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="city" className="text-base">
+                    City
+                  </Label>
+                  <Input
+                    id="city"
+                    value={customerInfo.city || ''}
+                    onChange={(e) =>
+                      onCustomerInfoChange({ ...customerInfo, city: e.target.value })
+                    }
+                    placeholder="City"
+                    className="min-h-[48px] text-base"
+                    autoComplete="address-level2"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label className="text-base">
+                    Governorate <span className="text-destructive">*</span>
+                  </Label>
+                  <Select
+                    value={selectedShippingCityId}
+                    onValueChange={onShippingCityChange}
+                    disabled={shippingSelectionDisabled}
+                  >
+                    <SelectTrigger className="min-h-[48px] text-base">
+                      <SelectValue
+                        placeholder={
+                          shippingSelectionDisabled
+                            ? "Shipping unavailable"
+                            : "Select governorate"
+                        }
+                      />
+                    </SelectTrigger>
+                    <SelectContent className="z-[70]" position="popper">
+                      {shippingCities.map((city) => (
+                        <SelectItem key={city.id} value={city.id}>
+                          <div className="flex flex-col text-start">
+                            <span className="font-medium">{city.name_en}</span>
+                            <span className="text-xs text-muted-foreground">
+                              {(city.name_ar || '').trim() || city.name_en} • {egpFormatter.format(city.shipping_fee)}
+                            </span>
+                          </div>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="postalCode" className="text-base">
+                    Postal code (optional)
+                  </Label>
+                  <Input
+                    id="postalCode"
+                    value={customerInfo.postalCode || ''}
+                    onChange={(e) =>
+                      onCustomerInfoChange({ ...customerInfo, postalCode: e.target.value })
+                    }
+                    placeholder="Postal code (optional)"
+                    className="min-h-[48px] text-base"
+                    autoComplete="postal-code"
+                  />
+                </div>
               </div>
 
               <div className="border-t pt-4 mt-6 space-y-4">
@@ -310,7 +446,11 @@ export default function CheckoutBottomSheet({
                   disabled={
                     isSubmitting ||
                     shippingSelectionDisabled ||
-                    !selectedShippingCityId
+                    !selectedShippingCityId ||
+                    !getFirstName() ||
+                    !getLastName() ||
+                    !customerInfo.address ||
+                    (!customerInfo.email && !customerInfo.whatsapp && !getEmailOrPhoneValue())
                   }
                 >
                   {isSubmitting ? "Submitting..." : "Confirm Order"}
