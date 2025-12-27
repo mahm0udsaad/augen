@@ -367,7 +367,7 @@ export default function CartPage() {
       {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
       {isDesktop ? (
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-          <DialogContent className="max-w-2xl" dir="ltr">
+          <DialogContent className="w-[95vw] max-w-lg" dir="ltr">
             {isOrderSubmitted ? (
               <div className="text-center py-8 space-y-6">
                 <CheckCircle className="w-20 h-20 text-green-500 mx-auto" />
@@ -382,13 +382,14 @@ export default function CartPage() {
                     Our sales team will contact you soon via WhatsApp to confirm your order
                   </p>
                 </div>
-                <div className="flex gap-3 justify-center">
-                  <Link href="/categories">
-                    <Button size="lg">Continue Shopping</Button>
+                <div className="flex flex-col gap-3">
+                  <Link href="/categories" className="w-full">
+                    <Button size="lg" className="w-full">Continue Shopping</Button>
                   </Link>
                   <Button
                     variant="outline"
                     size="lg"
+                    className="w-full"
                     onClick={() => {
                       setIsCheckoutOpen(false);
                       setIsOrderSubmitted(false);

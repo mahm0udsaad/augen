@@ -242,7 +242,7 @@ function ProductsPageContent() {
       {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
       {isDesktop ? (
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-          <DialogContent className="max-w-2xl" dir="ltr">
+          <DialogContent className="w-[95vw] max-w-lg" dir="ltr">
             {isOrderSubmitted ? (
               <>
                 <DialogHeader>
@@ -256,13 +256,14 @@ function ProductsPageContent() {
                     Our sales team will contact you soon via WhatsApp to confirm your order
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-2">
                   <Button
                     onClick={() => {
                       setIsCheckoutOpen(false)
                       setIsOrderSubmitted(false)
                       setSelectedProduct(null)
                     }}
+                    className="w-full"
                   >
                     Close
                   </Button>
@@ -273,8 +274,8 @@ function ProductsPageContent() {
                 <DialogHeader>
                   <DialogTitle>Complete Order</DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
+                <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>
                       <input

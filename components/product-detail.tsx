@@ -818,7 +818,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       {/* Checkout - Desktop Dialog / Mobile Bottom Sheet */}
       {isDesktop ? (
         <Dialog open={isCheckoutOpen} onOpenChange={setIsCheckoutOpen}>
-          <DialogContent className="max-w-2xl" dir="ltr">
+          <DialogContent className="w-[95vw] max-w-lg" dir="ltr">
             {isOrderSubmitted ? (
               <>
                 <DialogHeader>
@@ -832,13 +832,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     Our sales team will contact you soon via WhatsApp to confirm your order
                   </p>
                 </div>
-                <div className="grid grid-cols-2 gap-2">
+                <div className="flex flex-col gap-2">
                   <button
                     onClick={() => {
                       setIsCheckoutOpen(false)
                       setIsOrderSubmitted(false)
                     }}
-                    className="px-4 py-2 rounded-md border font-semibold"
+                    className="w-full px-4 py-2 rounded-md border font-semibold"
                   >
                     Close
                   </button>
@@ -849,8 +849,8 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 <DialogHeader>
                   <DialogTitle>Complete Order</DialogTitle>
                 </DialogHeader>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
+                <div className="space-y-6">
+                  <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>
                       <input
