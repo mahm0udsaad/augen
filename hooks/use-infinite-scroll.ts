@@ -63,6 +63,15 @@ export function useInfiniteScroll<T>({
     setError(null)
   }, [initialData])
 
+  // Ensure we load the first page at least once.
+  // Without this, consumers that render an "empty state" when data.length === 0 can
+  // accidentally prevent the observer target from mounting, causing a deadlock.
+  useEffect(() => {
+    if (data.length === 0 && hasMore && !loading && !error) {
+      loadMore()
+    }
+  }, [data.length, hasMore, loading, error, loadMore])
+
   // Intersection Observer for automatic loading
   useEffect(() => {
     const observer = new IntersectionObserver(
