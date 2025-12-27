@@ -31,6 +31,7 @@ export function useInfiniteScroll<T>({
   const [hasMore, setHasMore] = useState(true)
   const [error, setError] = useState<Error | null>(null)
   const observerTarget = useRef<HTMLDivElement | null>(null)
+  const initialLoadDone = useRef(false)
 
   const loadMore = useCallback(async () => {
     if (loading || !hasMore) return
@@ -61,16 +62,18 @@ export function useInfiniteScroll<T>({
     setPage(initialData.length > 0 ? 1 : 0)
     setHasMore(true)
     setError(null)
+    initialLoadDone.current = false
   }, [initialData])
 
   // Ensure we load the first page at least once.
   // Without this, consumers that render an "empty state" when data.length === 0 can
   // accidentally prevent the observer target from mounting, causing a deadlock.
   useEffect(() => {
-    if (data.length === 0 && hasMore && !loading && !error) {
+    if (!initialLoadDone.current && data.length === 0 && hasMore && !loading) {
+      initialLoadDone.current = true
       loadMore()
     }
-  }, [data.length, hasMore, loading, error, loadMore])
+  }, [data.length, hasMore, loading, loadMore])
 
   // Intersection Observer for automatic loading
   useEffect(() => {
