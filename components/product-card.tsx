@@ -41,12 +41,15 @@ export default function ProductCard({ product }: ProductCardProps) {
                 const img = e.currentTarget as HTMLImageElement
                 const currentSrc = img?.currentSrc
                 let headStatus: number | null = null
+                let headError: string | null = null
                 try {
-                  if (currentSrc && currentSrc.startsWith("/")) {
+                  if (currentSrc) {
                     const res = await fetch(currentSrc, { method: "HEAD" })
                     headStatus = res.status
                   }
-                } catch {}
+                } catch (err: any) {
+                  headError = String(err?.message || err)
+                }
                 fetch("http://127.0.0.1:7242/ingest/5593c2bb-8cf6-4bc8-ae42-5477c61c8363", {
                   method: "POST",
                   headers: { "Content-Type": "application/json" },
@@ -61,6 +64,7 @@ export default function ProductCard({ product }: ProductCardProps) {
                       intendedSrc: product.image || "/placeholder.svg",
                       currentSrc,
                       headStatus,
+                      headError,
                     },
                     timestamp: Date.now(),
                   }),
