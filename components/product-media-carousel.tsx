@@ -222,6 +222,38 @@ export default function ProductMediaCarousel({
             priority={currentIndex === 0}
             loading={currentIndex === 0 ? "eager" : "lazy"}
             quality={85}
+            onError={async (e) => {
+              // #region agent log (H1/H2/H3)
+              const img = e.currentTarget as HTMLImageElement
+              const currentSrc = img?.currentSrc
+              let headStatus: number | null = null
+              try {
+                if (currentSrc && currentSrc.startsWith("/")) {
+                  const res = await fetch(currentSrc, { method: "HEAD" })
+                  headStatus = res.status
+                }
+              } catch {}
+              fetch("http://127.0.0.1:7242/ingest/5593c2bb-8cf6-4bc8-ae42-5477c61c8363", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                  sessionId: "debug-session",
+                  runId: "pre-fix",
+                  hypothesisId: "H1",
+                  location: "components/product-media-carousel.tsx:onError(main)",
+                  message: "ProductMediaCarousel main Image failed",
+                  data: {
+                    productName,
+                    currentIndex,
+                    intendedSrc: currentItem.url,
+                    currentSrc,
+                    headStatus,
+                  },
+                  timestamp: Date.now(),
+                }),
+              }).catch(() => {})
+              // #endregion agent log
+            }}
           />
         )}
 

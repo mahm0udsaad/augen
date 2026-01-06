@@ -105,6 +105,38 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000, language
                 loading={index === 0 ? "eager" : "lazy"}
                 quality={85}
                 sizes="100vw"
+                onError={async (e) => {
+                  // #region agent log (H1/H2/H3)
+                  const img = e.currentTarget as HTMLImageElement
+                  const currentSrc = img?.currentSrc
+                  let headStatus: number | null = null
+                  try {
+                    if (currentSrc && currentSrc.startsWith("/")) {
+                      const res = await fetch(currentSrc, { method: "HEAD" })
+                      headStatus = res.status
+                    }
+                  } catch {}
+                  fetch("http://127.0.0.1:7242/ingest/5593c2bb-8cf6-4bc8-ae42-5477c61c8363", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      sessionId: "debug-session",
+                      runId: "pre-fix",
+                      hypothesisId: "H1",
+                      location: "components/hero-carousel.tsx:onError(desktop)",
+                      message: "HeroCarousel desktop Image failed",
+                      data: {
+                        slideId: slide.id,
+                        index,
+                        intendedSrc: slide.image_url,
+                        currentSrc,
+                        headStatus,
+                      },
+                      timestamp: Date.now(),
+                    }),
+                  }).catch(() => {})
+                  // #endregion agent log
+                }}
               />
               {/* Mobile Image */}
               <Image
@@ -116,6 +148,38 @@ export default function HeroCarousel({ slides, autoPlayInterval = 5000, language
                 loading={index === 0 ? "eager" : "lazy"}
                 quality={85}
                 sizes="100vw"
+                onError={async (e) => {
+                  // #region agent log (H1/H2/H3)
+                  const img = e.currentTarget as HTMLImageElement
+                  const currentSrc = img?.currentSrc
+                  let headStatus: number | null = null
+                  try {
+                    if (currentSrc && currentSrc.startsWith("/")) {
+                      const res = await fetch(currentSrc, { method: "HEAD" })
+                      headStatus = res.status
+                    }
+                  } catch {}
+                  fetch("http://127.0.0.1:7242/ingest/5593c2bb-8cf6-4bc8-ae42-5477c61c8363", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                      sessionId: "debug-session",
+                      runId: "pre-fix",
+                      hypothesisId: "H1",
+                      location: "components/hero-carousel.tsx:onError(mobile)",
+                      message: "HeroCarousel mobile Image failed",
+                      data: {
+                        slideId: slide.id,
+                        index,
+                        intendedSrc: slide.mobile_image_url || slide.image_url,
+                        currentSrc,
+                        headStatus,
+                      },
+                      timestamp: Date.now(),
+                    }),
+                  }).catch(() => {})
+                  // #endregion agent log
+                }}
               />
               {/* Gradient Overlay */}
               <div className="absolute inset-0 bg-gradient-to-b from-black/30 via-black/20 to-black/30" />
