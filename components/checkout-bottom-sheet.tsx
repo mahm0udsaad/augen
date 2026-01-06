@@ -39,6 +39,7 @@ interface CheckoutBottomSheetProps {
   isOrderSubmitted: boolean
   orderNumber: string
   shippingCities: ShippingCity[]
+  shippingError?: string | null
   selectedShippingCityId?: string
   onShippingCityChange: (cityId: string) => void
   isLoadingShippingCities?: boolean
@@ -59,6 +60,7 @@ export default function CheckoutBottomSheet({
   isOrderSubmitted,
   orderNumber,
   shippingCities,
+  shippingError = null,
   selectedShippingCityId,
   onShippingCityChange,
   isLoadingShippingCities = false,
@@ -94,7 +96,7 @@ export default function CheckoutBottomSheet({
   if (!mounted || (!isOpen && !isAnimating)) return null
 
   const shippingSelectionDisabled =
-    isLoadingShippingCities || shippingCities.length === 0
+    isLoadingShippingCities || !!shippingError || shippingCities.length === 0
 
   const sheet = (
     <>
@@ -259,8 +261,12 @@ export default function CheckoutBottomSheet({
                   <SelectTrigger className="min-h-[48px] text-base">
                     <SelectValue
                       placeholder={
-                        shippingSelectionDisabled
+                        isLoadingShippingCities
+                          ? "Loading shipping cities..."
+                          : shippingError
                           ? "Shipping unavailable"
+                          : shippingCities.length === 0
+                          ? "No shipping cities"
                           : "Select your city"
                       }
                     />
@@ -281,7 +287,7 @@ export default function CheckoutBottomSheet({
                 <p className="text-xs text-muted-foreground">
                   Shipping fees vary by city and are added to your total
                 </p>
-                {shippingSelectionDisabled && (
+                {shippingError && !isLoadingShippingCities && (
                   <p className="text-xs text-destructive">
                     Shipping options are unavailable right now. Please try again later.
                   </p>

@@ -10,13 +10,14 @@ export interface CartItem {
   unitPrice: number;
   quantity: number;
   maxQuantity: number;
+  color?: string;
 }
 
 interface CartContextType {
   items: CartItem[];
   addToCart: (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => void;
-  removeFromCart: (productId: string) => void;
-  updateQuantity: (productId: string, quantity: number) => void;
+  removeFromCart: (productId: string, color?: string) => void;
+  updateQuantity: (productId: string, quantity: number, color?: string) => void;
   clearCart: () => void;
   getTotalItems: () => number;
   getTotalPrice: () => number;
@@ -35,7 +36,15 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     try {
       const savedCart = localStorage.getItem(CART_STORAGE_KEY);
       if (savedCart) {
-        setItems(JSON.parse(savedCart));
+        const parsed = JSON.parse(savedCart);
+        // Backward-compat: older carts won't have `color`
+        const normalized = Array.isArray(parsed)
+          ? parsed.map((item) => ({
+              ...item,
+              color: typeof item?.color === 'string' ? item.color : undefined,
+            }))
+          : [];
+        setItems(normalized);
       }
     } catch (error) {
       console.error('Error loading cart:', error);
@@ -52,7 +61,11 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
   const addToCart = (item: Omit<CartItem, 'quantity'> & { quantity?: number }) => {
     setItems((prevItems) => {
-      const existingItem = prevItems.find((i) => i.productId === item.productId);
+      const existingItem = prevItems.find(
+        (i) =>
+          i.productId === item.productId &&
+          (i.color || '') === ((item as any).color || '')
+      );
 
       if (existingItem) {
         const newQuantity = existingItem.quantity + (item.quantity || 1);
@@ -64,7 +77,7 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
 
         toast.success('تم تحديث السلة');
         return prevItems.map((i) =>
-          i.productId === item.productId
+          i.productId === item.productId && (i.color || '') === ((item as any).color || '')
             ? { ...i, quantity: newQuantity }
             : i
         );
@@ -80,20 +93,24 @@ export function CartProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
-  const removeFromCart = (productId: string) => {
-    setItems((prevItems) => prevItems.filter((i) => i.productId !== productId));
+  const removeFromCart = (productId: string, color?: string) => {
+    setItems((prevItems) =>
+      prevItems.filter(
+        (i) => !(i.productId === productId && (i.color || '') === (color || ''))
+      )
+    );
     toast.success('تم الحذف من السلة');
   };
 
-  const updateQuantity = (productId: string, quantity: number) => {
+  const updateQuantity = (productId: string, quantity: number, color?: string) => {
     if (quantity < 1) {
-      removeFromCart(productId);
+      removeFromCart(productId, color);
       return;
     }
 
     setItems((prevItems) =>
       prevItems.map((item) => {
-        if (item.productId === productId) {
+        if (item.productId === productId && (item.color || '') === (color || '')) {
           if (quantity > item.maxQuantity) {
             toast.error('الكمية المتاحة غير كافية');
             return item;

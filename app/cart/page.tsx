@@ -28,6 +28,8 @@ export default function CartPage() {
   const {
     cities: shippingCities,
     isLoading: isLoadingShippingCities,
+    error: shippingCitiesError,
+    refresh: refreshShippingCities,
   } = useShippingCities();
 
   const [customerInfo, setCustomerInfo] = useState({
@@ -134,6 +136,7 @@ export default function CartPage() {
             productImage: item.productImage,
             quantity: item.quantity,
             unitPrice: item.unitPrice,
+            color: item.color,
           })),
         }),
       });
@@ -170,6 +173,7 @@ export default function CartPage() {
             quantity: item.quantity,
             unit_price: item.unit_price,
             total_price: item.total_price,
+            color: item.color,
           })),
         };
         existingOrders.unshift(orderHistoryItem); // Add to beginning
@@ -224,7 +228,7 @@ export default function CartPage() {
             <div className="lg:col-span-2 space-y-3 sm:space-y-4">
               {items.map((item) => (
                 <div
-                  key={item.productId}
+                  key={`${item.productId}::${item.color || ''}`}
                   className="bg-card rounded-lg p-3 sm:p-4 shadow-sm border overflow-hidden"
                 >
                   <div className="flex gap-3 sm:gap-4">
@@ -242,7 +246,7 @@ export default function CartPage() {
                         <Button
                           size="icon"
                           variant="ghost"
-                          onClick={() => removeFromCart(item.productId)}
+                          onClick={() => removeFromCart(item.productId, item.color)}
                           className="shrink-0 h-8 w-8 sm:h-10 sm:w-10"
                         >
                           <Trash2 className="w-4 h-4 text-destructive" />
@@ -259,7 +263,7 @@ export default function CartPage() {
                           <Button
                             size="icon"
                             variant="outline"
-                            onClick={() => updateQuantity(item.productId, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.productId, item.quantity - 1, item.color)}
                             disabled={item.quantity <= 1}
                             className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
                           >
@@ -271,20 +275,25 @@ export default function CartPage() {
                             max={item.maxQuantity}
                             value={item.quantity}
                             onChange={(e) =>
-                              updateQuantity(item.productId, parseInt(e.target.value) || 1)
+                              updateQuantity(item.productId, parseInt(e.target.value) || 1, item.color)
                             }
                             className="w-14 sm:w-16 text-center h-8 sm:h-9 text-sm"
                           />
                           <Button
                             size="icon"
                             variant="outline"
-                            onClick={() => updateQuantity(item.productId, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.productId, item.quantity + 1, item.color)}
                             disabled={item.quantity >= item.maxQuantity}
                             className="h-8 w-8 sm:h-9 sm:w-9 shrink-0"
                           >
                             <Plus className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                           </Button>
                         </div>
+                        {item.color && (
+                          <span className="text-xs sm:text-sm text-muted-foreground">
+                            Color: {item.color}
+                          </span>
+                        )}
                         <span className="text-xs sm:text-sm text-muted-foreground">
                           Available: {item.maxQuantity}
                         </span>
@@ -404,7 +413,7 @@ export default function CartPage() {
                 <DialogHeader>
                   <DialogTitle className="text-2xl">Complete Order</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4 py-4">
+                <div className="space-y-4 py-4 max-h-[80vh] overflow-y-auto">
                   <div className="space-y-2">
                     <Label htmlFor="name">
                       Full Name <span className="text-destructive">*</span>
@@ -489,9 +498,13 @@ export default function CartPage() {
                       onChange={(e) =>
                         setCustomerInfo({ ...customerInfo, shippingCityId: e.target.value })
                       }
-                      disabled={isLoadingShippingCities || shippingCities.length === 0}
+                      disabled={isLoadingShippingCities || !!shippingCitiesError || shippingCities.length === 0}
                     >
-                      {shippingCities.length === 0 ? (
+                      {isLoadingShippingCities ? (
+                        <option value="">Loading shipping cities...</option>
+                      ) : shippingCitiesError ? (
+                        <option value="">Shipping unavailable</option>
+                      ) : shippingCities.length === 0 ? (
                         <option value="">No shipping cities available</option>
                       ) : (
                         shippingCities.map((city) => (
@@ -501,6 +514,21 @@ export default function CartPage() {
                         ))
                       )}
                     </select>
+                    {shippingCitiesError && !isLoadingShippingCities && (
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <p className="text-xs text-destructive">
+                          Shipping options are unavailable right now. Please try again later.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={refreshShippingCities}
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground">
                       Shipping fee: {formatPrice(shippingFee)}
                     </p>
@@ -555,6 +583,7 @@ export default function CartPage() {
           isOrderSubmitted={isOrderSubmitted}
           orderNumber={orderNumber}
           shippingCities={shippingCities}
+          shippingError={shippingCitiesError}
           selectedShippingCityId={customerInfo.shippingCityId}
           onShippingCityChange={(cityId) =>
             setCustomerInfo((prev) => ({ ...prev, shippingCityId: cityId }))

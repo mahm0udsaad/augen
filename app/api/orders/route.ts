@@ -181,6 +181,7 @@ export async function POST(request: NextRequest) {
       product_id: item.productId,
       product_name: item.productName,
       product_image: item.productImage,
+      color: item.color ?? null,
       quantity: item.quantity,
       unit_price: item.unitPrice,
       total_price: item.unitPrice * item.quantity,

@@ -27,6 +27,7 @@ interface OrderHistoryItem {
     quantity: number;
     unit_price: number;
     total_price: number;
+    color?: string;
   }>;
 }
 
@@ -210,6 +211,11 @@ export default function OrdersPage() {
                                 <p className="text-sm text-muted-foreground">
                                   {item.quantity} × {formatPrice(item.unit_price)}
                                 </p>
+                                {item.color && (
+                                  <p className="text-sm text-muted-foreground">
+                                    Color: {item.color}
+                                  </p>
+                                )}
                               </div>
                               <div className="text-right">
                                 <p className="font-bold">{formatPrice(item.total_price)}</p>

@@ -38,6 +38,7 @@ interface OrderItem {
   product_id: string;
   product_name: string;
   product_image: string;
+  color?: string | null;
   quantity: number;
   unit_price: number;
   total_price: number;
@@ -536,6 +537,11 @@ export default function AdminOrdersPage() {
                           <p className="text-sm text-muted-foreground">
                             الكمية: {item.quantity} × {formatPrice(item.unit_price)}
                           </p>
+                          {item.color && (
+                            <p className="text-sm text-muted-foreground">
+                              اللون: {item.color}
+                            </p>
+                          )}
                         </div>
                         <div className="text-left">
                           <p className="font-bold text-primary">

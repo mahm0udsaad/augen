@@ -64,6 +64,18 @@ function ProductsPageContent() {
     pageSize: 12,
   })
 
+  // Deduplicate products by ID to prevent duplicate key errors
+  const uniqueProducts = useMemo(() => {
+    const seen = new Set<string>()
+    return products.filter((product) => {
+      if (seen.has(product.id)) {
+        return false
+      }
+      seen.add(product.id)
+      return true
+    })
+  }, [products])
+
   // Reset infinite scroll when filters change
   useEffect(() => {
     reset()
@@ -190,14 +202,14 @@ function ProductsPageContent() {
           )}
         </div>
 
-        {products.length === 0 && !loading ? (
+        {uniqueProducts.length === 0 && !loading ? (
           <div className="text-center py-24">
             <p className="text-lg">No matching products found at the moment</p>
           </div>
         ) : (
           <>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 sm:gap-4 md:gap-8">
-              {products.map((product, index) => (
+              {uniqueProducts.map((product, index) => (
                 <div
                   key={product.id}
                   className="animate-slide-up flex flex-col"
@@ -230,7 +242,7 @@ function ProductsPageContent() {
               </div>
             )}
 
-            {!hasMore && products.length > 0 && (
+            {!hasMore && uniqueProducts.length > 0 && (
               <div className="text-center py-8">
                 <p className="text-muted-foreground">You've reached the end of our collection</p>
               </div>
@@ -274,7 +286,7 @@ function ProductsPageContent() {
                 <DialogHeader>
                   <DialogTitle>Complete Order</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-6">
+                <div className="space-y-6 max-h-[80vh] overflow-y-auto">
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>

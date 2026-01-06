@@ -47,10 +47,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const [shareUrl, setShareUrl] = useState("")
   const [copySuccess, setCopySuccess] = useState(false)
   const [isShareModalOpen, setIsShareModalOpen] = useState(false)
+  const [canNativeShare, setCanNativeShare] = useState(false)
   const CUSTOMER_INFO_STORAGE_KEY = "augen_checkout_info"
   const {
     cities: shippingCities,
     isLoading: isLoadingShippingCities,
+    error: shippingCitiesError,
+    refresh: refreshShippingCities,
   } = useShippingCities()
 
   useEffect(() => {
@@ -133,14 +136,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   }, [product.images])
 
   const fallbackColorOptions = useMemo(() => {
-    if (!product.colorOptions || product.colorOptions.length === 0) return []
-    return product.colorOptions.map((option, index) => ({
-      key: `${option.name}-${index}`,
-      label: option.name,
-      colorType: "color" as const,
-      hex: option.hex || "#000000",
-    }))
-  }, [product.colorOptions])
+    // No fallback color options available - using only image-based swatches
+    return []
+  }, [])
 
   const availableColorSwatches = imageColorSwatches.length > 0 ? imageColorSwatches : fallbackColorOptions
   const defaultShareUrl = useMemo(() => {
@@ -156,6 +154,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   useEffect(() => {
     if (typeof window !== "undefined") {
       setShareUrl(window.location.href)
+      setCanNativeShare(typeof navigator !== "undefined" && typeof navigator.share === "function")
     }
   }, [])
 
@@ -250,8 +249,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
     },
   ]
 
-  const canNativeShare = typeof navigator !== "undefined" && typeof navigator.share === "function"
-
   const handleNativeShare = async () => {
     if (typeof navigator === "undefined" || !navigator.share) return
     try {
@@ -286,6 +283,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
       unitPrice: product.price,
       maxQuantity: availableQuantity,
       quantity: quantity,
+      color: selectedColor || undefined,
     })
     setAddedToCart(true)
     setTimeout(() => setAddedToCart(false), 2000)
@@ -335,6 +333,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               productImage: product.image,
               quantity: quantity,
               unitPrice: product.price,
+              color: selectedColor || undefined,
             },
           ],
         }),
@@ -361,7 +360,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
   const itemsTotal = product.price * quantity
   const totalWithShipping = itemsTotal + shippingFee
 
-  const relatedItems = []
+  const relatedItems: Product[] = []
 
   return (
     <section className="px-0 py-0 md:px-2 md:py-6" dir="ltr">
@@ -385,15 +384,9 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           >
             {/* ... existing info sections ... */}
             <div className={isTransitioning ? "view-transition-slide-in view-transition-slide-in-delay-1" : ""}>
-              <p className="text-xs md:text-sm text-accent font-semibold mb-1 md:mb-2 uppercase tracking-wide">
-                {product.style}
-              </p>
               <h1 className="text-2xl md:text-4xl font-serif font-bold text-foreground mb-2 md:mb-4 text-balance leading-tight">
                 {product.name}
               </h1>
-              <p className="text-sm md:text-base text-muted-foreground text-pretty leading-relaxed">
-                {product.description}
-              </p>
             </div>
 
             {/* Price and specs */}
@@ -411,10 +404,6 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 </div>
               </div>
 
-              <div className="space-y-2">
-                <p className="text-xs md:text-sm font-semibold text-foreground uppercase tracking-wide">Material</p>
-                <p className="text-muted-foreground text-sm md:text-base">{product.material}</p>
-              </div>
 
               {/* Color circles */}
               {availableColorSwatches.length > 0 && (
@@ -423,7 +412,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                     Available Colors
                   </p>
                   <div className="flex gap-3 flex-wrap">
-                    {availableColorSwatches.map((swatch) => (
+                    {availableColorSwatches.map((swatch: {
+                      key: string
+                      label: string
+                      subtitle?: string
+                      colorType: "color" | "tiger"
+                      hex: string
+                    }) => (
                       <button
                         key={swatch.key}
                         onClick={() => setSelectedColor(swatch.label)}
@@ -849,7 +844,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                 <DialogHeader>
                   <DialogTitle>Complete Order</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-6">
+                <div className="space-y-6 max-h-[80vh] overflow-y-auto">
                   <div className="space-y-4">
                     <div>
                       <label className="text-sm font-medium">Name</label>
@@ -907,9 +902,13 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                       onChange={(e) =>
                         setCustomerInfo((p) => ({ ...p, shippingCityId: e.target.value }))
                       }
-                      disabled={isLoadingShippingCities || shippingCities.length === 0}
+                      disabled={isLoadingShippingCities || !!shippingCitiesError || shippingCities.length === 0}
                     >
-                      {shippingCities.length === 0 ? (
+                      {isLoadingShippingCities ? (
+                        <option value="">Loading shipping cities...</option>
+                      ) : shippingCitiesError ? (
+                        <option value="">Shipping unavailable</option>
+                      ) : shippingCities.length === 0 ? (
                         <option value="">No shipping cities available</option>
                       ) : (
                         shippingCities.map((city) => (
@@ -919,6 +918,21 @@ export default function ProductDetail({ product }: ProductDetailProps) {
                         ))
                       )}
                     </select>
+                    {shippingCitiesError && !isLoadingShippingCities && (
+                      <div className="mt-2 flex items-center justify-between gap-3">
+                        <p className="text-xs text-destructive">
+                          Shipping options are unavailable right now. Please try again later.
+                        </p>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={refreshShippingCities}
+                        >
+                          Retry
+                        </Button>
+                      </div>
+                    )}
                     <p className="text-xs text-muted-foreground mt-1">
                       Shipping fee: {formatPrice(shippingFee)}
                     </p>
@@ -987,6 +1001,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
           isOrderSubmitted={isOrderSubmitted}
           orderNumber={orderNumber}
           shippingCities={shippingCities}
+          shippingError={shippingCitiesError}
           selectedShippingCityId={customerInfo.shippingCityId}
           onShippingCityChange={(cityId) =>
             setCustomerInfo((prev) => ({ ...prev, shippingCityId: cityId }))
