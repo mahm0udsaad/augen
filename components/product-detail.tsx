@@ -704,9 +704,7 @@ export default function ProductDetail({ product }: ProductDetailProps) {
               <div>
                 <h3 className="text-lg md:text-xl font-semibold text-foreground mb-2 md:mb-3">Business Hours</h3>
                 <div className="space-y-1 md:space-y-2 text-sm md:text-base text-muted-foreground">
-                  <p>Monday – Friday: 10:00 AM - 8:00 PM</p>
-                  <p>Saturday: 10:00 AM - 6:00 PM</p>
-                  <p>Sunday: 12:00 PM - 5:00 PM</p>
+                  <p>Every day: 12:00 PM - 1:00 AM</p>
                 </div>
               </div>
 
